@@ -1,0 +1,415 @@
+"""
+Обработчик создания нового пользователя при регистрации.
+"""
+from typing import Optional, Dict, Any
+from aiogram import Router, F
+from aiogram.types import Message, CallbackQuery
+from aiogram.fsm.context import FSMContext
+from aiogram.filters import StateFilter
+
+from messages import BotMessages
+from keyboards import InlineKeyboards
+from states import RegistrationStates
+from utils import db_manager, Validators, BotHelpers
+from models import UserModel
+
+# Создание роутера
+user_create_router = Router()
+
+
+@user_create_router.message(StateFilter(RegistrationStates.waiting_for_first_name))
+async def get_first_name(message: Message, state: FSMContext) -> None:
+    """Получить имя пользователя."""
+    is_valid: bool
+    value: str
+    is_valid, value = Validators.validate_name(message.text)
+    if not is_valid:
+        await message.answer(
+            BotMessages.INVALID_INPUT,
+            reply_markup=InlineKeyboards.back_keyboard(),
+        )
+        return
+
+    await state.update_data(first_name=value)
+    await state.set_state(RegistrationStates.waiting_for_last_name)
+    await message.answer(
+        BotMessages.REQUEST_LAST_NAME,
+        reply_markup=InlineKeyboards.back_keyboard(),
+    )
+
+
+@user_create_router.message(StateFilter(RegistrationStates.waiting_for_last_name))
+async def get_last_name(message: Message, state: FSMContext) -> None:
+    """Получить фамилию пользователя."""
+    is_valid, value = Validators.validate_name(message.text)
+    if not is_valid:
+        await message.answer(
+            BotMessages.INVALID_INPUT,
+            reply_markup=InlineKeyboards.back_keyboard(),
+        )
+        return
+
+    await state.update_data(last_name=value)
+    await state.set_state(RegistrationStates.waiting_for_phone)
+    await message.answer(
+        BotMessages.REQUEST_PHONE,
+        reply_markup=InlineKeyboards.back_keyboard(),
+    )
+
+
+@user_create_router.message(StateFilter(RegistrationStates.waiting_for_phone))
+async def get_phone(message: Message, state: FSMContext) -> None:
+    """Получить телефон пользователя."""
+    is_valid, value = Validators.validate_phone(message.text)
+    if not is_valid:
+        await message.answer(
+            BotMessages.INVALID_INPUT,
+            reply_markup=InlineKeyboards.back_keyboard(),
+        )
+        return
+
+    # Проверить, не существует ли уже такой телефон
+    if await db_manager.phone_exists(value):
+        await message.answer(
+            "❌ Пользователь с таким номером телефона уже зарегистрирован.",
+            reply_markup=InlineKeyboards.back_keyboard(),
+        )
+        return
+
+    await state.update_data(phone=value)
+    await state.set_state(RegistrationStates.waiting_for_email)
+    await message.answer(
+        BotMessages.REQUEST_EMAIL,
+        reply_markup=InlineKeyboards.back_keyboard(),
+    )
+
+
+@user_create_router.message(StateFilter(RegistrationStates.waiting_for_email))
+async def get_email(message: Message, state: FSMContext) -> None:
+    """Получить email пользователя."""
+    is_valid, value = Validators.validate_email(message.text)
+    if not is_valid:
+        await message.answer(
+            BotMessages.INVALID_INPUT,
+            reply_markup=InlineKeyboards.back_keyboard(),
+        )
+        return
+
+    # Проверить, не существует ли уже такой email
+    if await db_manager.email_exists(value):
+        await message.answer(
+            "❌ Пользователь с таким email уже зарегистрирован.",
+            reply_markup=InlineKeyboards.back_keyboard(),
+        )
+        return
+
+    await state.update_data(email=value)
+    await state.set_state(RegistrationStates.waiting_for_country)
+    await message.answer(
+        BotMessages.REQUEST_COUNTRY,
+        reply_markup=InlineKeyboards.back_keyboard(),
+    )
+
+
+@user_create_router.message(StateFilter(RegistrationStates.waiting_for_country))
+async def get_country(message: Message, state: FSMContext) -> None:
+    """Получить страну пользователя."""
+    is_valid, value = Validators.validate_text_field(message.text, min_length=2, max_length=100)
+    if not is_valid:
+        await message.answer(
+            BotMessages.INVALID_INPUT,
+            reply_markup=InlineKeyboards.back_keyboard(),
+        )
+        return
+
+    await state.update_data(country=value)
+    await state.set_state(RegistrationStates.waiting_for_city)
+    await message.answer(
+        BotMessages.REQUEST_CITY,
+        reply_markup=InlineKeyboards.back_keyboard(),
+    )
+
+
+@user_create_router.message(StateFilter(RegistrationStates.waiting_for_city))
+async def get_city(message: Message, state: FSMContext) -> None:
+    """Получить город пользователя."""
+    is_valid, value = Validators.validate_text_field(message.text, min_length=2, max_length=100)
+    if not is_valid:
+        await message.answer(
+            BotMessages.INVALID_INPUT,
+            reply_markup=InlineKeyboards.back_keyboard(),
+        )
+        return
+
+    await state.update_data(city=value)
+    await state.set_state(RegistrationStates.waiting_for_club)
+    await message.answer(
+        BotMessages.REQUEST_CLUB,
+        reply_markup=InlineKeyboards.back_keyboard(),
+    )
+
+
+@user_create_router.message(StateFilter(RegistrationStates.waiting_for_club))
+async def get_club(message: Message, state: FSMContext) -> None:
+    """Получить клуб/школу пользователя."""
+    is_valid, value = Validators.validate_text_field(message.text, min_length=2, max_length=255)
+    if not is_valid:
+        await message.answer(
+            BotMessages.INVALID_INPUT,
+            reply_markup=InlineKeyboards.back_keyboard(),
+        )
+        return
+
+    await state.update_data(club=value)
+    # Ask about role (Player/Voter?) - first confirmation
+    await state.set_state(RegistrationStates.waiting_for_role_confirmation_first)
+    await message.answer(
+        BotMessages.REQUEST_PLAYER_VOTER,
+        reply_markup=InlineKeyboards.yes_no_keyboard(),
+    )
+
+
+@user_create_router.message(StateFilter(RegistrationStates.waiting_for_certificate_name))
+async def get_certificate_name(message: Message, state: FSMContext) -> None:
+    """Получить имя для сертификата."""
+    is_valid, value = Validators.validate_certificate_name(message.text)
+    if not is_valid:
+        await message.answer(
+            "❌ Пожалуйста, используйте только латинские буквы, пробелы и дефисы.",
+            reply_markup=InlineKeyboards.back_keyboard(),
+        )
+        return
+
+    await state.update_data(certificate_name=value)
+    state_data = await state.get_data()
+
+    # Check where we came from
+    # If we came from role_confirmation_repeat_yes with NO→YES path, go to presentation
+    # Otherwise go to company
+    if state_data.get('first_role_confirmation_yes') == False:
+        # User said NO first, YES second - go directly to presentation
+        await state.set_state(RegistrationStates.waiting_for_presentation)
+        await message.answer(
+            BotMessages.REQUEST_PRESENTATION,
+            reply_markup=InlineKeyboards.back_keyboard(),
+        )
+    else:
+        # User said YES first - go to company
+        await state.set_state(RegistrationStates.waiting_for_company)
+        await message.answer(
+            BotMessages.REQUEST_COMPANY,
+            reply_markup=InlineKeyboards.back_keyboard(),
+        )
+
+
+@user_create_router.message(StateFilter(RegistrationStates.waiting_for_company))
+async def get_company(message: Message, state: FSMContext) -> None:
+    """Получить компанию пользователя."""
+    is_valid, value = Validators.validate_text_field(message.text, min_length=2, max_length=255)
+    if not is_valid:
+        await message.answer(
+            BotMessages.INVALID_INPUT,
+            reply_markup=InlineKeyboards.back_keyboard(),
+        )
+        return
+
+    await state.update_data(company=value)
+    await state.set_state(RegistrationStates.waiting_for_position)
+    await message.answer(
+        BotMessages.REQUEST_POSITION,
+        reply_markup=InlineKeyboards.back_keyboard(),
+    )
+
+
+@user_create_router.message(StateFilter(RegistrationStates.waiting_for_position))
+async def get_position(message: Message, state: FSMContext) -> None:
+    """Получить должность пользователя."""
+    is_valid, value = Validators.validate_text_field(message.text, min_length=2, max_length=255)
+    if not is_valid:
+        await message.answer(
+            BotMessages.INVALID_INPUT,
+            reply_markup=InlineKeyboards.back_keyboard(),
+        )
+        return
+
+    await state.update_data(position=value)
+    state_data = await state.get_data()
+    first_role_confirmation_yes = state_data.get('first_role_confirmation_yes', False)
+
+    if first_role_confirmation_yes:
+        # User said YES to Player/Voter on first confirmation
+        # Show repeat confirmation before presentation
+        await state.set_state(RegistrationStates.waiting_for_role_confirmation_repeat)
+        await message.answer(
+            BotMessages.REQUEST_PLAYER_VOTER,
+            reply_markup=InlineKeyboards.yes_no_keyboard(),
+        )
+    else:
+        # User said NO to Player/Voter on first confirmation
+        # Give another chance to choose role before final confirmation
+        await state.set_state(RegistrationStates.waiting_for_role_confirmation_repeat)
+        await message.answer(
+            BotMessages.REQUEST_PLAYER_VOTER,
+            reply_markup=InlineKeyboards.yes_no_keyboard(),
+        )
+
+
+@user_create_router.callback_query(F.data == "yes", RegistrationStates.waiting_for_role_confirmation_first)
+async def role_confirmation_first_yes(query: CallbackQuery, state: FSMContext) -> None:
+    """Обработчик подтверждения роли Player/Voter - ДА (первый вопрос)."""
+    await state.update_data(first_role_confirmation_yes=True)
+    await state.set_state(RegistrationStates.waiting_for_certificate_name)
+    await query.message.edit_text(
+        BotMessages.REQUEST_CERTIFICATE_NAME,
+        reply_markup=InlineKeyboards.back_keyboard(),
+    )
+    await query.answer()
+
+
+@user_create_router.callback_query(F.data == "no", RegistrationStates.waiting_for_role_confirmation_first)
+async def role_confirmation_first_no(query: CallbackQuery, state: FSMContext) -> None:
+    """Обработчик отказа от роли Player/Voter - НЕТ (первый вопрос)."""
+    await state.update_data(first_role_confirmation_yes=False)
+    await state.set_state(RegistrationStates.waiting_for_company)
+    await query.message.edit_text(
+        BotMessages.REQUEST_COMPANY,
+        reply_markup=InlineKeyboards.back_keyboard(),
+    )
+    await query.answer()
+
+
+@user_create_router.callback_query(F.data == "yes", RegistrationStates.waiting_for_role_confirmation_repeat)
+async def role_confirmation_repeat_yes(query: CallbackQuery, state: FSMContext) -> None:
+    """Обработчик подтверждения Player/Voter на повторном вопросе - ДА."""
+    state_data = await state.get_data()
+    first_role_confirmation_yes = state_data.get('first_role_confirmation_yes', False)
+
+    if first_role_confirmation_yes:
+        # User confirmed YES twice - ask for presentation
+        await state.set_state(RegistrationStates.waiting_for_presentation)
+        await query.message.edit_text(
+            BotMessages.REQUEST_PRESENTATION,
+            reply_markup=InlineKeyboards.back_keyboard(),
+        )
+    else:
+        # User said NO first, now saying YES - need certificate name first
+        await state.set_state(RegistrationStates.waiting_for_certificate_name)
+        await query.message.edit_text(
+            BotMessages.REQUEST_CERTIFICATE_NAME,
+            reply_markup=InlineKeyboards.back_keyboard(),
+        )
+    await query.answer()
+
+
+@user_create_router.callback_query(F.data == "no", RegistrationStates.waiting_for_role_confirmation_repeat)
+async def role_confirmation_repeat_no(query: CallbackQuery, state: FSMContext) -> None:
+    """Обработчик отказа от Player/Voter на повторном вопросе - НЕТ."""
+    state_data = await state.get_data()
+    first_role_confirmation_yes = state_data.get('first_role_confirmation_yes', False)
+
+    if first_role_confirmation_yes:
+        # User said YES first, now saying NO - create without presentation
+        await state.update_data(presentation="")
+    else:
+        # User said NO both times - ensure no certificate
+        await state.update_data(certificate_name=None, presentation="")
+
+    # Show final confirmation
+    await state.set_state(RegistrationStates.waiting_for_final_confirmation)
+    state_data = await state.get_data()
+    user = await _create_user_from_state_data(query.from_user, state_data)
+
+    if user:
+        include_certificate = state_data.get("certificate_name") is not None
+        user_data_text = BotHelpers.format_user_data(
+            user.first_name,
+            user.last_name,
+            user.telegram_username or "@-",
+            user.phone,
+            user.email,
+            user.country,
+            user.city,
+            user.club,
+            user.company or "-",
+            user.position or "-",
+            user.certificate_name if include_certificate else None,
+            user.presentation if include_certificate else None,
+            include_certificate,
+        )
+        await query.message.edit_text(
+            user_data_text,
+            reply_markup=InlineKeyboards.yes_no_keyboard(),
+        )
+
+    await query.answer()
+
+
+@user_create_router.message(StateFilter(RegistrationStates.waiting_for_presentation))
+async def get_presentation(message: Message, state: FSMContext) -> None:
+    """Получить представление пользователя на соревнованиях."""
+    is_valid, value = Validators.validate_text_field(message.text, min_length=3, max_length=500)
+    if not is_valid:
+        await message.answer(
+            BotMessages.INVALID_INPUT,
+            reply_markup=InlineKeyboards.back_keyboard(),
+        )
+        return
+
+    await state.update_data(presentation=value)
+    await state.set_state(RegistrationStates.waiting_for_final_confirmation)
+
+    # Получить все данные и показать финальную проверку
+    state_data = await state.get_data()
+    user = await _create_user_from_state_data(message.from_user, state_data)
+
+    if user:
+        include_certificate = state_data.get("certificate_name") is not None
+        user_data_text = BotHelpers.format_user_data(
+            user.first_name,
+            user.last_name,
+            user.telegram_username or "@-",
+            user.phone,
+            user.email,
+            user.country,
+            user.city,
+            user.club,
+            user.company or "-",
+            user.position or "-",
+            user.certificate_name if include_certificate else None,
+            user.presentation if include_certificate else None,
+            include_certificate,
+        )
+        await message.answer(
+            user_data_text,
+            reply_markup=InlineKeyboards.yes_no_keyboard(),
+        )
+
+@user_create_router.callback_query(F.data == "yes", RegistrationStates.waiting_for_certificate_name)
+async def certificate_after_role_yes(query: CallbackQuery, state: FSMContext) -> None:
+    """Обработчик после введения сертификата для тех, кто выбрал YES на repeat confirmation."""
+    # Этот handler нужен для случая когда пользователь вернулся к certificate_name
+    # после повторного подтверждения. Но на самом деле это message handler, не callback.
+    pass
+
+
+async def _create_user_from_state_data(telegram_user: Any, state_data: Dict[str, Any]) -> UserModel:
+    """Создать объект пользователя из данных состояния (вспомогательная функция)."""
+    user: UserModel = UserModel(
+        telegram_id=telegram_user.id,
+        telegram_username=telegram_user.username,
+        first_name=state_data.get("first_name", ""),
+        last_name=state_data.get("last_name", ""),
+        phone=state_data.get("phone", ""),
+        email=state_data.get("email", ""),
+        country=state_data.get("country", ""),
+        city=state_data.get("city", ""),
+        club=state_data.get("club", ""),
+        bio=state_data.get("bio"),
+        date_of_birth=state_data.get("date_of_birth"),
+        channel_name=state_data.get("channel_name"),
+        company=state_data.get("company", ""),
+        position=state_data.get("position", ""),
+        certificate_name=state_data.get("certificate_name"),
+        presentation=state_data.get("presentation"),
+    )
+    return user
