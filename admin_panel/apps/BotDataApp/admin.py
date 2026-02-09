@@ -156,6 +156,63 @@ class Registration(django_models.Model):
             return None
 
 
+class TimeSlot(django_models.Model):
+    """Django model for TimeSlot."""
+    id = django_models.IntegerField(primary_key=True, verbose_name='ID')
+    competition_id = django_models.IntegerField(verbose_name='ID соревнования')
+    slot_day = django_models.DateField(verbose_name='День')
+    start_time = django_models.TimeField(verbose_name='Начало')
+    end_time = django_models.TimeField(verbose_name='Конец')
+    max_voters = django_models.IntegerField(default=10, verbose_name='Макс судей')
+    is_active = django_models.BooleanField(default=True, verbose_name='Активно')
+    created_at = django_models.DateTimeField(auto_now_add=True, verbose_name='Создано')
+
+    class Meta:
+        managed = False
+        db_table = 'time_slots'
+        verbose_name = 'Временной слот'
+        verbose_name_plural = 'Временные слоты'
+        ordering = ['slot_day', 'start_time']
+
+    def __str__(self):
+        return f"{self.slot_day} {self.start_time}-{self.end_time}"
+
+    def get_competition(self):
+        """Get competition name."""
+        try:
+            comp = Competition.objects.get(id=self.competition_id)
+            return comp.name
+        except Competition.DoesNotExist:
+            return f"Соревнование #{self.competition_id}"
+
+
+class JuryPanel(django_models.Model):
+    """Django model for JuryPanel."""
+    id = django_models.IntegerField(primary_key=True, verbose_name='ID')
+    competition_id = django_models.IntegerField(verbose_name='ID соревнования')
+    panel_name = django_models.CharField(max_length=100, verbose_name='Название коллегии')
+    max_voters = django_models.IntegerField(default=5, verbose_name='Макс судей')
+    is_active = django_models.BooleanField(default=True, verbose_name='Активно')
+    created_at = django_models.DateTimeField(auto_now_add=True, verbose_name='Создано')
+
+    class Meta:
+        managed = False
+        db_table = 'jury_panels'
+        verbose_name = 'Судейская коллегия'
+        verbose_name_plural = 'Судейские коллегии'
+
+    def __str__(self):
+        return self.panel_name
+
+    def get_competition(self):
+        """Get competition name."""
+        try:
+            comp = Competition.objects.get(id=self.competition_id)
+            return comp.name
+        except Competition.DoesNotExist:
+            return f"Соревнование #{self.competition_id}"
+
+
 @admin.register(BotDashboardStat)
 class BotDashboardStatAdmin(admin.ModelAdmin):
     """Admin interface for Dashboard Statistics."""
@@ -533,6 +590,341 @@ class RegistrationAdmin(admin.ModelAdmin):
     mark_as_confirmed.short_description = 'Отметить как подтвержденные'
 
 
+# ============ Voter Time Slots & Jury Panels Admin ============
+
+@admin.register(TimeSlot)
+class TimeSlotAdmin(admin.ModelAdmin):
+    """Admin interface for Time Slots."""
+
+    list_display = ['slot_day', 'start_time', 'end_time', 'get_competition_name', 'max_voters', 'is_active']
+    list_filter = ['slot_day', 'is_active', 'competition_id']
+    search_fields = ['competition_id']
+    readonly_fields = ['created_at', 'get_competition_name']
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ('competition_id', 'get_competition_name', 'slot_day', 'start_time', 'end_time')
+        }),
+        ('Параметры', {
+            'fields': ('max_voters', 'is_active')
+        }),
+        ('Система', {
+            'fields': ('created_at',),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def get_competition_name(self, obj):
+        """Get competition name."""
+        return obj.get_competition()
+    get_competition_name.short_description = 'Соревнование'
+
+    def save_model(self, request, obj, form, change):
+        """Save model and show message."""
+        super().save_model(request, obj, form, change)
+        if change:
+            self.message_user(request, f'✅ Временной слот обновлен: {obj.slot_day} {obj.start_time}-{obj.end_time}')
+        else:
+            self.message_user(request, f'✅ Временной слот создан: {obj.slot_day} {obj.start_time}-{obj.end_time}')
+
+
+@admin.register(JuryPanel)
+class JuryPanelAdmin(admin.ModelAdmin):
+    """Admin interface for Jury Panels."""
+
+    list_display = ['panel_name', 'get_competition_name', 'max_voters', 'is_active']
+    list_filter = ['is_active', 'competition_id']
+    search_fields = ['panel_name', 'competition_id']
+    readonly_fields = ['created_at', 'get_competition_name']
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ('competition_id', 'get_competition_name', 'panel_name')
+        }),
+        ('Параметры', {
+            'fields': ('max_voters', 'is_active')
+        }),
+        ('Система', {
+            'fields': ('created_at',),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def get_competition_name(self, obj):
+        """Get competition name."""
+        return obj.get_competition()
+    get_competition_name.short_description = 'Соревнование'
+
+    def save_model(self, request, obj, form, change):
+        """Save model and show message."""
+        super().save_model(request, obj, form, change)
+        if change:
+            self.message_user(request, f'✅ Судейская коллегия обновлена: {obj.panel_name}')
+        else:
+            self.message_user(request, f'✅ Судейская коллегия создана: {obj.panel_name}')
+
+
+# ============ Broadcast System Admin ============
+
+class MessageTemplateAdmin(admin.ModelAdmin):
+    """Admin interface for message templates."""
+
+    list_display = ('name', 'is_active', 'get_preview', 'created_at')
+    list_filter = ('is_active', 'created_at')
+    search_fields = ('name', 'description')
+    readonly_fields = ('created_at', 'updated_at', 'available_variables_display')
+
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ('name', 'description', 'is_active')
+        }),
+        ('Содержание', {
+            'fields': ('subject', 'body_telegram', 'body_email')
+        }),
+        ('Переменные', {
+            'fields': ('available_variables_display',),
+            'classes': ('collapse',)
+        }),
+        ('Система', {
+            'fields': ('created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def get_preview(self, obj):
+        """Show template preview in list view."""
+        return format_html(
+            '<button style="background-color: #417690; color: white; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer;">'
+            'Предпросмотр</button>'
+        )
+    get_preview.short_description = 'Действие'
+
+    def available_variables_display(self, obj):
+        """Display available variables."""
+        if not obj.available_variables:
+            return "Переменные не определены"
+        html = "<table style='width: 100%;'>"
+        for var, desc in obj.available_variables.items():
+            html += f"<tr><td><code>{var}</code></td><td>{desc}</td></tr>"
+        html += "</table>"
+        return format_html(html)
+    available_variables_display.short_description = 'Доступные переменные'
+
+
+class BroadcastRecipientInline(admin.TabularInline):
+    """Inline view of broadcast recipients."""
+
+    model = __import__('admin_panel.apps.BotDataApp.models', fromlist=['BroadcastRecipient']).BroadcastRecipient
+    extra = 0
+    readonly_fields = (
+        'user_id', 'telegram_id', 'email_address',
+        'telegram_status', 'telegram_sent_at', 'email_status', 'email_sent_at'
+    )
+    can_delete = False
+    fields = ('user_id', 'telegram_id', 'email_address', 'telegram_status', 'email_status')
+
+
+class BroadcastAdmin(admin.ModelAdmin):
+    """Admin interface for broadcasts."""
+
+    list_display = (
+        'name',
+        'get_status_badge',
+        'get_progress_bar',
+        'get_recipient_count',
+        'created_at'
+    )
+    list_filter = ('status', 'send_telegram', 'send_email', 'created_at')
+    search_fields = ('name', 'template_id')
+    readonly_fields = (
+        'created_at', 'updated_at', 'started_at', 'completed_at',
+        'total_recipients', 'sent_count', 'failed_count',
+        'get_filter_summary'
+    )
+    actions = ['execute_broadcast', 'reset_broadcast']
+
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ('name', 'status', 'template_id')
+        }),
+        ('Настройки доставки', {
+            'fields': ('send_telegram', 'send_email')
+        }),
+        ('Фильтры получателей', {
+            'fields': ('filters', 'get_filter_summary'),
+            'classes': ('wide',)
+        }),
+        ('Статистика', {
+            'fields': ('total_recipients', 'sent_count', 'failed_count'),
+        }),
+        ('Временные метки', {
+            'fields': ('scheduled_at', 'started_at', 'completed_at', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+        ('Система', {
+            'fields': ('created_by',),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def get_status_badge(self, obj):
+        """Show status as colored badge."""
+        status_colors = {
+            'draft': '#999',
+            'scheduled': '#FF9800',
+            'in_progress': '#2196F3',
+            'completed': '#4CAF50',
+            'failed': '#F44336',
+        }
+        color = status_colors.get(obj.status, '#999')
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 3px 8px; border-radius: 3px; font-weight: bold;">'
+            '{}</span>',
+            color,
+            obj.get_status_display()
+        )
+    get_status_badge.short_description = 'Статус'
+
+    def get_progress_bar(self, obj):
+        """Show progress bar."""
+        if obj.total_recipients == 0:
+            return "Без получателей"
+        progress = obj.get_progress_percent()
+        return format_html(
+            '<div style="width: 200px; height: 20px; background-color: #eee; border-radius: 3px; overflow: hidden;">'
+            '<div style="width: {}%; height: 100%; background-color: #4CAF50; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px;">'
+            '{}%</div></div>',
+            progress,
+            progress
+        )
+    get_progress_bar.short_description = 'Прогресс'
+
+    def get_recipient_count(self, obj):
+        """Show recipient count."""
+        return format_html(
+            '<strong>{}</strong> / {} ({} ошибок)',
+            obj.sent_count,
+            obj.total_recipients,
+            obj.failed_count
+        )
+    get_recipient_count.short_description = 'Отправлено'
+
+    def get_filter_summary(self, obj):
+        """Show filter summary."""
+        if not obj.filters:
+            return "Фильтры не установлены"
+        html = "<ul>"
+        for key, value in obj.filters.items():
+            if isinstance(value, list):
+                value = ", ".join(str(v) for v in value)
+            html += f"<li><strong>{key}:</strong> {value}</li>"
+        html += "</ul>"
+        return format_html(html)
+    get_filter_summary.short_description = 'Применяемые фильтры'
+
+    def execute_broadcast(self, request, queryset):
+        """Execute selected broadcasts."""
+        selected = queryset.filter(status='draft')
+        updated = selected.update(status='in_progress')
+        self.message_user(request, f'✅ Запущено {updated} рассылок.')
+    execute_broadcast.short_description = '▶️ Запустить выбранные рассылки'
+
+    def reset_broadcast(self, request, queryset):
+        """Reset broadcast to draft."""
+        updated = queryset.update(status='draft', sent_count=0, failed_count=0)
+        self.message_user(request, f'🔄 Сброшено {updated} рассылок.')
+    reset_broadcast.short_description = '🔄 Сбросить на черновик'
+
+
+class BroadcastRecipientAdmin(admin.ModelAdmin):
+    """Admin interface for broadcast recipients."""
+
+    list_display = (
+        'user_id',
+        'email_address',
+        'get_telegram_status',
+        'get_email_status',
+        'created_at'
+    )
+    list_filter = ('telegram_status', 'email_status', 'created_at', 'broadcast_id')
+    search_fields = ('user_id', 'email_address', 'telegram_id')
+    readonly_fields = (
+        'broadcast_id', 'user_id', 'telegram_id', 'email_address',
+        'telegram_status', 'telegram_sent_at', 'telegram_error',
+        'email_status', 'email_sent_at', 'email_error',
+        'rendered_subject', 'rendered_body', 'created_at', 'updated_at'
+    )
+    can_delete = False
+
+    fieldsets = (
+        ('Получатель', {
+            'fields': ('broadcast_id', 'user_id', 'telegram_id', 'email_address')
+        }),
+        ('Доставка в Telegram', {
+            'fields': ('telegram_status', 'telegram_sent_at', 'telegram_error', 'telegram_message_id'),
+        }),
+        ('Доставка по Email', {
+            'fields': ('email_status', 'email_sent_at', 'email_error'),
+        }),
+        ('Отрендеренное содержание', {
+            'fields': ('rendered_subject', 'rendered_body'),
+            'classes': ('collapse',)
+        }),
+        ('Система', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def get_telegram_status(self, obj):
+        """Show Telegram status with icon."""
+        status_icons = {
+            'pending': '⏳',
+            'sent': '✅',
+            'delivered': '✔️',
+            'failed': '❌',
+            'blocked': '🚫',
+        }
+        icon = status_icons.get(obj.telegram_status, '?')
+        colors = {
+            'pending': '#FF9800',
+            'sent': '#4CAF50',
+            'failed': '#F44336',
+            'blocked': '#9C27B0',
+        }
+        color = colors.get(obj.telegram_status, '#999')
+        return format_html(
+            '<span style="color: {}; font-weight: bold;">{} {}</span>',
+            color,
+            icon,
+            obj.get_telegram_status_display() if hasattr(obj, 'get_telegram_status_display') else obj.telegram_status
+        )
+    get_telegram_status.short_description = 'Telegram'
+
+    def get_email_status(self, obj):
+        """Show Email status with icon."""
+        status_icons = {
+            'pending': '⏳',
+            'sent': '✅',
+            'delivered': '✔️',
+            'failed': '❌',
+            'blocked': '🚫',
+        }
+        icon = status_icons.get(obj.email_status, '?')
+        colors = {
+            'pending': '#FF9800',
+            'sent': '#4CAF50',
+            'failed': '#F44336',
+            'blocked': '#9C27B0',
+        }
+        color = colors.get(obj.email_status, '#999')
+        return format_html(
+            '<span style="color: {}; font-weight: bold;">{} {}</span>',
+            color,
+            icon,
+            obj.get_email_status_display() if hasattr(obj, 'get_email_status_display') else obj.email_status
+        )
+    get_email_status.short_description = 'Email'
+
+
 class BotDataAdmin(admin.AdminSite):
     """Custom admin site for Bot Data Management."""
 
@@ -574,3 +966,16 @@ bot_admin_site = BotDataAdmin(name='bot_admin')
 # Register models with custom admin site
 bot_admin_site.register(BotDashboardStat, BotDashboardStatAdmin)
 bot_admin_site.register(AdminLog, AdminLogAdmin)
+
+# Register bot data models
+bot_admin_site.register(Competition, CompetitionAdmin)
+bot_admin_site.register(User, UserAdmin)
+bot_admin_site.register(Registration, RegistrationAdmin)
+bot_admin_site.register(TimeSlot, TimeSlotAdmin)
+bot_admin_site.register(JuryPanel, JuryPanelAdmin)
+
+# Register broadcast models
+from .models import MessageTemplate, Broadcast, BroadcastRecipient
+bot_admin_site.register(MessageTemplate, MessageTemplateAdmin)
+bot_admin_site.register(Broadcast, BroadcastAdmin)
+bot_admin_site.register(BroadcastRecipient, BroadcastRecipientAdmin)

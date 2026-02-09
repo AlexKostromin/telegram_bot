@@ -43,15 +43,65 @@ async def time_slot_selection_handler(callback: CallbackQuery, state: FSMContext
             else:
                 # No panels available, proceed to final confirmation
                 await state.set_state(RegistrationStates.waiting_for_final_confirmation)
-                await callback.answer()
-                return
+
+                # Show final confirmation
+                state_data = await state.get_data()
+                from handlers.registration.user_create import _create_user_from_state_data
+
+                user = await _create_user_from_state_data(callback.from_user, state_data)
+                if user:
+                    from utils.helpers import BotHelpers
+                    include_certificate = state_data.get("certificate_name") is not None
+                    user_data_text = BotHelpers.format_user_data(
+                        user.first_name,
+                        user.last_name,
+                        user.telegram_username or "@-",
+                        user.phone,
+                        user.email,
+                        user.country,
+                        user.city,
+                        user.club,
+                        user.company or "-",
+                        user.position or "-",
+                        user.certificate_name if include_certificate else None,
+                        user.presentation if include_certificate else None,
+                        include_certificate,
+                    )
+                    await callback.message.edit_text(
+                        user_data_text,
+                        reply_markup=InlineKeyboards.yes_no_keyboard(),
+                    )
         else:
-            # No jury panel needed, proceed to company field
-            await state.set_state(RegistrationStates.waiting_for_company)
-            await callback.message.edit_text(
-                BotMessages.REQUEST_COMPANY,
-                reply_markup=InlineKeyboards.back_keyboard(),
-            )
+            # No jury panel needed, proceed to final confirmation
+            await state.set_state(RegistrationStates.waiting_for_final_confirmation)
+
+            # Show final confirmation
+            state_data = await state.get_data()
+            from handlers.registration.user_create import _create_user_from_state_data
+
+            user = await _create_user_from_state_data(callback.from_user, state_data)
+            if user:
+                from utils.helpers import BotHelpers
+                include_certificate = state_data.get("certificate_name") is not None
+                user_data_text = BotHelpers.format_user_data(
+                    user.first_name,
+                    user.last_name,
+                    user.telegram_username or "@-",
+                    user.phone,
+                    user.email,
+                    user.country,
+                    user.city,
+                    user.club,
+                    user.company or "-",
+                    user.position or "-",
+                    user.certificate_name if include_certificate else None,
+                    user.presentation if include_certificate else None,
+                    include_certificate,
+                )
+                await callback.message.edit_text(
+                    user_data_text,
+                    reply_markup=InlineKeyboards.yes_no_keyboard(),
+                )
 
         await callback.answer()
 
@@ -86,10 +136,35 @@ async def jury_panel_selection_handler(callback: CallbackQuery, state: FSMContex
         panel_id = int(callback.data.split("_")[2])
         await state.update_data(selected_jury_panel=panel_id)
 
-        # Proceed to company field
-        await state.set_state(RegistrationStates.waiting_for_company)
-        await callback.message.edit_text(
-            BotMessages.REQUEST_COMPANY,
-            reply_markup=InlineKeyboards.back_keyboard(),
-        )
+        # Proceed to final confirmation
+        await state.set_state(RegistrationStates.waiting_for_final_confirmation)
+
+        # Show final confirmation
+        state_data = await state.get_data()
+        from handlers.registration.user_create import _create_user_from_state_data
+
+        user = await _create_user_from_state_data(callback.from_user, state_data)
+        if user:
+            from utils.helpers import BotHelpers
+            include_certificate = state_data.get("certificate_name") is not None
+            user_data_text = BotHelpers.format_user_data(
+                user.first_name,
+                user.last_name,
+                user.telegram_username or "@-",
+                user.phone,
+                user.email,
+                user.country,
+                user.city,
+                user.club,
+                user.company or "-",
+                user.position or "-",
+                user.certificate_name if include_certificate else None,
+                user.presentation if include_certificate else None,
+                include_certificate,
+            )
+            await callback.message.edit_text(
+                user_data_text,
+                reply_markup=InlineKeyboards.yes_no_keyboard(),
+            )
+
         await callback.answer()

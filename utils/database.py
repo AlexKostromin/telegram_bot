@@ -381,6 +381,123 @@ class DatabaseManager:
                     await session.commit()
             return competition
 
+    # ===== BROADCAST MANAGEMENT METHODS =====
+
+    async def create_message_template(
+        self,
+        name: str,
+        subject: str,
+        body_telegram: str,
+        body_email: str,
+        available_variables: Dict[str, str],
+        description: Optional[str] = None,
+        created_by: Optional[int] = None
+    ) -> "MessageTemplate":
+        """Create a new message template for broadcasts."""
+        from models import MessageTemplate
+        async with self.get_session() as session:
+            template = MessageTemplate(
+                name=name,
+                subject=subject,
+                body_telegram=body_telegram,
+                body_email=body_email,
+                available_variables=available_variables,
+                description=description,
+                created_by=created_by,
+                is_active=True
+            )
+            session.add(template)
+            await session.commit()
+            return template
+
+    async def create_broadcast(
+        self,
+        name: str,
+        template_id: int,
+        filters: Dict[str, Any],
+        send_telegram: bool = True,
+        send_email: bool = False,
+        created_by: int = 0
+    ) -> "Broadcast":
+        """Create a new broadcast campaign."""
+        from models import Broadcast, BroadcastStatus
+        async with self.get_session() as session:
+            broadcast = Broadcast(
+                name=name,
+                template_id=template_id,
+                filters=filters,
+                send_telegram=send_telegram,
+                send_email=send_email,
+                status=BroadcastStatus.draft.value,
+                created_by=created_by
+            )
+            session.add(broadcast)
+            await session.commit()
+            return broadcast
+
+    async def get_broadcasts(self, status: Optional[str] = None) -> List["Broadcast"]:
+        """Get list of broadcasts, optionally filtered by status."""
+        from models import Broadcast
+        async with self.get_session() as session:
+            query = select(Broadcast)
+            if status:
+                query = query.where(Broadcast.status == status)
+            result = await session.execute(query.order_by(Broadcast.created_at.desc()))
+            return result.scalars().all()
+
+    async def get_broadcast_by_id(self, broadcast_id: int) -> Optional["Broadcast"]:
+        """Get broadcast by ID."""
+        from models import Broadcast
+        async with self.get_session() as session:
+            return await session.get(Broadcast, broadcast_id)
+
+    async def get_broadcast_statistics(self, broadcast_id: int) -> Dict[str, Any]:
+        """Get statistics for a broadcast."""
+        from models import Broadcast, BroadcastRecipient
+        async with self.get_session() as session:
+            broadcast = await session.get(Broadcast, broadcast_id)
+            if not broadcast:
+                return {}
+
+            # Get recipient statistics
+            result = await session.execute(
+                select(BroadcastRecipient).where(
+                    BroadcastRecipient.broadcast_id == broadcast_id
+                )
+            )
+            recipients = result.scalars().all()
+
+            # Calculate stats
+            total = len(recipients)
+            telegram_sent = sum(1 for r in recipients if r.telegram_status == 'sent')
+            email_sent = sum(1 for r in recipients if r.email_status == 'sent')
+            failed = sum(1 for r in recipients if r.telegram_status == 'failed' or r.email_status == 'failed')
+
+            return {
+                'broadcast_id': broadcast.id,
+                'name': broadcast.name,
+                'status': broadcast.status.value if hasattr(broadcast.status, 'value') else broadcast.status,
+                'total_recipients': total,
+                'telegram_sent': telegram_sent,
+                'email_sent': email_sent,
+                'failed': failed,
+                'sent_count': broadcast.sent_count,
+                'failed_count': broadcast.failed_count,
+                'created_at': broadcast.created_at,
+                'started_at': broadcast.started_at,
+                'completed_at': broadcast.completed_at
+            }
+
+    async def get_message_templates(self, active_only: bool = False) -> List["MessageTemplate"]:
+        """Get list of message templates."""
+        from models import MessageTemplate
+        async with self.get_session() as session:
+            query = select(MessageTemplate)
+            if active_only:
+                query = query.where(MessageTemplate.is_active == True)
+            result = await session.execute(query.order_by(MessageTemplate.created_at.desc()))
+            return result.scalars().all()
+
 
 # Глобальный экземпляр менеджера БД
 db_manager = DatabaseManager()

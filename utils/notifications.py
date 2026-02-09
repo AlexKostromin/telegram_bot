@@ -105,8 +105,9 @@ async def send_email(
 ) -> None:
     """Send email notification."""
     import os
+    import asyncio
+    import smtplib
     from dotenv import load_dotenv
-    import aiosmtplib
     from email.mime.text import MIMEText
 
     load_dotenv()
@@ -116,7 +117,7 @@ async def send_email(
     SMTP_USERNAME = os.getenv('SMTP_USERNAME')
     SMTP_PASSWORD = os.getenv('SMTP_PASSWORD')
     SMTP_USE_TLS = os.getenv('SMTP_USE_TLS', 'True').lower() == 'true'
-    EMAIL_FROM = os.getenv('EMAIL_FROM_ADDRESS', 'noreply@example.com')
+    EMAIL_FROM = os.getenv('SUPPORT_EMAIL') or os.getenv('EMAIL_FROM_ADDRESS', 'noreply@example.com')
 
     if not all([SMTP_HOST, SMTP_USERNAME, SMTP_PASSWORD]):
         logger.warning("SMTP not configured, skipping email")
@@ -131,12 +132,20 @@ async def send_email(
         message['From'] = EMAIL_FROM
         message['To'] = email_address
 
-        async with aiosmtplib.SMTP(hostname=SMTP_HOST, port=SMTP_PORT) as smtp:
-            if SMTP_USE_TLS:
-                await smtp.starttls()
+        def send_smtp() -> None:
+            """Send email via SMTP using built-in smtplib."""
+            server = smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=10)
 
-            await smtp.login(SMTP_USERNAME, SMTP_PASSWORD)
-            await smtp.send_message(message)
+            if SMTP_USE_TLS:
+                server.starttls()
+
+            server.login(SMTP_USERNAME, SMTP_PASSWORD)
+            server.send_message(message)
+            server.quit()
+
+        # Run in thread pool to keep async
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, send_smtp)
 
         logger.info(f"✅ Email отправлен на {email_address}")
         print(f"✅ Email sent to {email_address}")

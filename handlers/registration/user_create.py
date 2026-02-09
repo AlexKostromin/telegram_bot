@@ -356,10 +356,33 @@ async def get_presentation(message: Message, state: FSMContext) -> None:
         return
 
     await state.update_data(presentation=value)
+
+    # Получить данные состояния для проверки роли
+    state_data = await state.get_data()
+    selected_role = state_data.get("selected_role")
+    selected_competition = state_data.get("selected_competition")
+
+    # Для voters - показать выбор временных слотов
+    if selected_role == "voter" and selected_competition:
+        try:
+            # Получить доступные временные слоты для соревнования
+            time_slots = await db_manager.get_available_time_slots(selected_competition.get("id"))
+
+            if time_slots:
+                # Показать выбор временных слотов
+                await message.answer(
+                    BotMessages.SELECT_TIME_SLOTS,
+                    reply_markup=InlineKeyboards.time_slots_keyboard(time_slots, [])
+                )
+                await state.set_state(RegistrationStates.waiting_for_time_slot_selection)
+                return
+        except Exception as e:
+            print(f"Error loading time slots: {e}")
+
+    # Для остальных - показать финальное подтверждение
     await state.set_state(RegistrationStates.waiting_for_final_confirmation)
 
     # Получить все данные и показать финальную проверку
-    state_data = await state.get_data()
     user = await _create_user_from_state_data(message.from_user, state_data)
 
     if user:
