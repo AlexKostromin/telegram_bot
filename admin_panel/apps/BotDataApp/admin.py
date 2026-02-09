@@ -283,6 +283,7 @@ class UserAdmin(admin.ModelAdmin):
     list_filter = ['country', 'city', 'is_active', 'created_at']
     search_fields = ['first_name', 'last_name', 'telegram_id', 'email', 'phone', 'telegram_username']
     readonly_fields = ['id', 'telegram_id', 'created_at', 'updated_at']
+    actions = ['send_notification_action']
     fieldsets = (
         ('Telegram', {
             'fields': ('id', 'telegram_id', 'telegram_username')
@@ -301,6 +302,55 @@ class UserAdmin(admin.ModelAdmin):
             'fields': ('is_active', 'created_at', 'updated_at')
         }),
     )
+
+    def send_notification_action(self, request, queryset):
+        """Send notification to selected users."""
+        import asyncio
+        from utils import db_manager
+        from utils.notifications import notify_user
+
+        users = list(queryset.values_list('telegram_id', 'first_name', 'last_name'))
+        count = len(users)
+
+        # Сообщение по умолчанию (можешь отредактировать)
+        message = """
+🔔 ВАЖНОЕ УВЕДОМЛЕНИЕ
+
+Уважаемые участники!
+
+Соревнование начинается завтра!
+Не забудьте проверить свои данные в профиле.
+
+Если у вас есть вопросы, свяжитесь с организаторами.
+
+С уважением,
+Команда USN
+        """.strip()
+
+        # Попытка отправить уведомление каждому
+        async def send_all():
+            await db_manager.init_db()
+            sent = 0
+            for telegram_id, first_name, last_name in users:
+                try:
+                    await notify_user(
+                        telegram_id=telegram_id,
+                        message=message,
+                        db_manager=db_manager
+                    )
+                    sent += 1
+                except Exception as e:
+                    print(f"Error sending to {first_name} {last_name}: {e}")
+            await db_manager.close_db()
+            return sent
+
+        try:
+            sent = asyncio.run(send_all())
+            self.message_user(request, f'✅ Уведомление отправлено {sent}/{count} пользователям')
+        except Exception as e:
+            self.message_user(request, f'❌ Ошибка при отправке: {str(e)}', level='ERROR')
+
+    send_notification_action.short_description = '📤 Отправить уведомление выбранным пользователям'
 
     def get_full_name(self, obj):
         """Get full name."""
