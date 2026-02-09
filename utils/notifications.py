@@ -7,6 +7,19 @@ from config import ADMIN_IDS
 from messages.texts import BotMessages
 
 
+async def notify_user(
+    bot: Bot,
+    telegram_id: int,
+    message: str
+) -> None:
+    """Send custom notification to user."""
+    try:
+        await bot.send_message(telegram_id, message)
+    except Exception as e:
+        print(f"Error sending notification to user {telegram_id}: {e}")
+        raise
+
+
 async def notify_admins_new_registration(
     bot: Bot,
     user_name: str,

@@ -306,7 +306,11 @@ class UserAdmin(admin.ModelAdmin):
     def send_notification_action(self, request, queryset):
         """Send notification to selected users."""
         import asyncio
-        from utils import db_manager
+        import os
+        import sys
+        sys.path.insert(0, '/home/alex/Документы/telegram_bot')
+
+        from aiogram import Bot
         from utils.notifications import notify_user
 
         users = list(queryset.values_list('telegram_id', 'first_name', 'last_name'))
@@ -327,21 +331,30 @@ class UserAdmin(admin.ModelAdmin):
 Команда USN
         """.strip()
 
+        # Получить токен бота
+        from dotenv import load_dotenv
+        load_dotenv('/home/alex/Документы/telegram_bot/.env')
+        bot_token = os.getenv('BOT_TOKEN')
+
+        if not bot_token:
+            self.message_user(request, f'❌ Ошибка: BOT_TOKEN не найден в .env', level='ERROR')
+            return
+
         # Попытка отправить уведомление каждому
         async def send_all():
-            await db_manager.init_db()
+            bot = Bot(token=bot_token)
             sent = 0
             for telegram_id, first_name, last_name in users:
                 try:
                     await notify_user(
+                        bot=bot,
                         telegram_id=telegram_id,
-                        message=message,
-                        db_manager=db_manager
+                        message=message
                     )
                     sent += 1
                 except Exception as e:
                     print(f"Error sending to {first_name} {last_name}: {e}")
-            await db_manager.close_db()
+            await bot.session.close()
             return sent
 
         try:
