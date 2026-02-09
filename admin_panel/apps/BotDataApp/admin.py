@@ -304,20 +304,21 @@ class UserAdmin(admin.ModelAdmin):
     )
 
     def send_notification_action(self, request, queryset):
-        """Send notification to selected users."""
+        """Send notification to selected users via Telegram and Email."""
         import asyncio
         import os
         import sys
         sys.path.insert(0, '/home/alex/Документы/telegram_bot')
 
         from aiogram import Bot
-        from utils.notifications import notify_user
+        from utils.notifications import notify_user, send_email
 
-        users = list(queryset.values_list('telegram_id', 'first_name', 'last_name'))
+        # Get users with email addresses
+        users = list(queryset.values_list('telegram_id', 'email', 'first_name', 'last_name'))
         count = len(users)
 
-        # Сообщение по умолчанию (можешь отредактировать)
-        message = """
+        # Telegram message
+        message_tg = """
 🔔 ВАЖНОЕ УВЕДОМЛЕНИЕ
 
 Уважаемые участники!
@@ -331,7 +332,26 @@ class UserAdmin(admin.ModelAdmin):
 Команда USN
         """.strip()
 
-        # Получить токен бота
+        # Email HTML message
+        message_email = """
+<html>
+<body style="font-family: Arial, sans-serif; color: #333;">
+<p>🔔 <strong>ВАЖНОЕ УВЕДОМЛЕНИЕ</strong></p>
+
+<p>Уважаемые участники!</p>
+
+<p>Соревнование начинается завтра!<br>
+Не забудьте проверить свои данные в профиле.</p>
+
+<p>Если у вас есть вопросы, свяжитесь с организаторами.</p>
+
+<p>С уважением,<br>
+Команда USN</p>
+</body>
+</html>
+        """.strip()
+
+        # Get bot token
         from dotenv import load_dotenv
         load_dotenv('/home/alex/Документы/telegram_bot/.env')
         bot_token = os.getenv('BOT_TOKEN')
@@ -340,30 +360,49 @@ class UserAdmin(admin.ModelAdmin):
             self.message_user(request, f'❌ Ошибка: BOT_TOKEN не найден в .env', level='ERROR')
             return
 
-        # Попытка отправить уведомление каждому
+        # Send notifications
         async def send_all():
             bot = Bot(token=bot_token)
-            sent = 0
-            for telegram_id, first_name, last_name in users:
+            sent_tg = 0
+            sent_email = 0
+
+            for telegram_id, email, first_name, last_name in users:
+                user_name = f"{first_name} {last_name}".strip()
+
+                # Send Telegram
                 try:
                     await notify_user(
                         bot=bot,
                         telegram_id=telegram_id,
-                        message=message
+                        message=message_tg
                     )
-                    sent += 1
+                    sent_tg += 1
                 except Exception as e:
-                    print(f"Error sending to {first_name} {last_name}: {e}")
+                    print(f"❌ Telegram error for {user_name}: {e}")
+
+                # Send Email
+                if email:
+                    try:
+                        await send_email(
+                            email_address=email,
+                            subject="ВАЖНОЕ УВЕДОМЛЕНИЕ - Соревнование начинается завтра!",
+                            body=message_email
+                        )
+                        sent_email += 1
+                    except Exception as e:
+                        print(f"❌ Email error for {user_name}: {e}")
+
             await bot.session.close()
-            return sent
+            return sent_tg, sent_email
 
         try:
-            sent = asyncio.run(send_all())
-            self.message_user(request, f'✅ Уведомление отправлено {sent}/{count} пользователям')
+            sent_tg, sent_email = asyncio.run(send_all())
+            msg = f'✅ Telegram: {sent_tg}/{count} | Email: {sent_email}/{count}'
+            self.message_user(request, msg)
         except Exception as e:
             self.message_user(request, f'❌ Ошибка при отправке: {str(e)}', level='ERROR')
 
-    send_notification_action.short_description = '📤 Отправить уведомление выбранным пользователям'
+    send_notification_action.short_description = '📤 Отправить в Telegram + Email'
 
     def get_full_name(self, obj):
         """Get full name."""
