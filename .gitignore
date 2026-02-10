@@ -1,5 +1,21 @@
-# Markdown Documentation Files
-*.md
+# Markdown Documentation Files (Keep essential docs, ignore outdated ones)
+# Keep: README.md, POSTGRESQL_MIGRATION.md, MIGRATION_IMPLEMENTATION_SUMMARY.md, DOCKER_MAKEFILE_GUIDE.md
+# Ignore: Outdated implementation guides, quick starts, plans, status files
+ADMIN_PANEL_*.md
+BROADCAST_*.md
+CHANGES_SUMMARY.md
+DEPLOYMENT*.md
+DOCKER_QUICKSTART.md
+DOCKER_SETUP_COMPLETE.md
+EMAIL_SETUP.md
+FUNCTIONS_REFERENCE.md
+IMPLEMENTATION_*.md
+QUICK_*.md
+QUICKSTART.md
+REQUIREMENTS_VERIFICATION.md
+SUPPORT_IMPLEMENTATION.md
+PLAN_*.md
+PROJECT_STRUCTURE.md
 
 # Python
 __pycache__/
@@ -72,3 +88,16 @@ htmlcov/
 # Node modules (if using npm)
 node_modules/
 npm-debug.log
+
+# Obsolete Utility Scripts (use Makefile instead)
+logs-bot.sh
+monitor.sh
+restart-bot.sh
+start-admin-panel.sh
+start-bot.sh
+start_services.sh
+stop-bot.sh
+
+# Manifest and obsolete files
+FILES_MANIFEST.txt
+DOCKER_FILES_CHECKLIST.md
