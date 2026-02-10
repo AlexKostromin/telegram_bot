@@ -7,7 +7,7 @@ class Validators:
 
     @staticmethod
     def validate_phone(phone: str) -> Tuple[bool, str]:
-        pattern = r"^[+7|8]\d{10}$"
+        pattern = r"^(\+7|8)\d{10}$"
         phone_clean = phone.replace(" ", "").replace("-", "").replace("(", "").replace(")", "")
 
         if re.match(pattern, phone_clean):

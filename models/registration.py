@@ -1,5 +1,5 @@
 from typing import Optional
-from sqlalchemy import Column, Integer, String, BigInteger, DateTime, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, BigInteger, DateTime, ForeignKey, Boolean, UniqueConstraint
 from datetime import datetime
 import enum
 from models.user import Base
@@ -12,6 +12,7 @@ class RegistrationStatus(str, enum.Enum):
 class RegistrationModel(Base):
 
     __tablename__: str = "registrations"
+    __table_args__ = (UniqueConstraint('user_id', 'competition_id', 'role', name='uq_user_comp_role'),)
 
     id: int = Column(Integer, primary_key=True)
     user_id: int = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)

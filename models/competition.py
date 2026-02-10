@@ -35,3 +35,15 @@ class CompetitionModel(Base):
             "adviser": self.adviser_entry_open,
         }
         return role_flags.get(role, False)
+
+    def get_available_roles(self) -> List[str]:
+        roles: List[str] = []
+        if self.player_entry_open:
+            roles.append("player")
+        if self.voter_entry_open:
+            roles.append("voter")
+        if self.viewer_entry_open:
+            roles.append("viewer")
+        if self.adviser_entry_open:
+            roles.append("adviser")
+        return roles
