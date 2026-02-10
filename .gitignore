@@ -1,6 +1,6 @@
 # Markdown Documentation Files (Keep essential docs, ignore outdated ones)
-# Keep: README.md, POSTGRESQL_MIGRATION.md, MIGRATION_IMPLEMENTATION_SUMMARY.md, DOCKER_MAKEFILE_GUIDE.md
-# Ignore: Outdated implementation guides, quick starts, plans, status files
+# Keep: README.md
+# Ignore: Outdated implementation guides, quick starts, plans, status files, client templates
 ADMIN_PANEL_*.md
 BROADCAST_*.md
 CHANGES_SUMMARY.md
@@ -16,6 +16,7 @@ REQUIREMENTS_VERIFICATION.md
 SUPPORT_IMPLEMENTATION.md
 PLAN_*.md
 PROJECT_STRUCTURE.md
+РАЗВЕРТЫВАНИЕ.md
 
 # Python
 __pycache__/
