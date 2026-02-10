@@ -8,7 +8,6 @@ from django.db import models
 from django.db import connection
 from django.core.exceptions import ImproperlyConfigured
 
-# Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
 
 try:
@@ -23,7 +22,6 @@ try:
 except ImportError:
     SQLALCHEMY_MODELS_AVAILABLE = False
 
-
 class BotDashboardStat(models.Model):
     """Cache statistics for the dashboard."""
 
@@ -37,7 +35,6 @@ class BotDashboardStat(models.Model):
 
     def __str__(self):
         return f"{self.stat_name}: {self.stat_value}"
-
 
 class SQLiteDataHelper(models.Model):
     """Helper model to access raw SQLite data."""
@@ -142,7 +139,6 @@ class SQLiteDataHelper(models.Model):
         except Exception:
             return []
 
-
 class AdminLog(models.Model):
     """Log of admin actions."""
 
@@ -157,7 +153,7 @@ class AdminLog(models.Model):
 
     admin_id = models.BigIntegerField(verbose_name='ID администратора')
     action = models.CharField(max_length=20, choices=ACTION_CHOICES, verbose_name='Действие')
-    target_type = models.CharField(max_length=50, verbose_name='Тип объекта')  # 'user', 'registration', 'competition', etc.
+    target_type = models.CharField(max_length=50, verbose_name='Тип объекта')
     target_id = models.IntegerField(verbose_name='ID объекта')
     description = models.TextField(blank=True, verbose_name='Описание')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Создано')
@@ -169,10 +165,6 @@ class AdminLog(models.Model):
 
     def __str__(self):
         return f"{self.get_action_display()} - {self.target_type}:{self.target_id}"
-
-
-# ===== BROADCAST SYSTEM MODELS =====
-# These models wrap the SQLAlchemy broadcast tables for Django admin access
 
 class MessageTemplate(models.Model):
     """Message template for broadcasts."""
@@ -198,7 +190,6 @@ class MessageTemplate(models.Model):
 
     def __str__(self):
         return f"{self.name}"
-
 
 class Broadcast(models.Model):
     """Broadcast campaign."""
@@ -248,7 +239,6 @@ class Broadcast(models.Model):
         if self.total_recipients == 0:
             return 0
         return int((self.sent_count / self.total_recipients) * 100)
-
 
 class BroadcastRecipient(models.Model):
     """Broadcast recipient delivery status."""

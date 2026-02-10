@@ -19,7 +19,6 @@ from .channels import NotificationChannel, DeliveryResult
 
 logger = logging.getLogger(__name__)
 
-
 class EmailChannel(NotificationChannel):
     """
     Notification channel for sending emails via SMTP.
@@ -68,7 +67,6 @@ class EmailChannel(NotificationChannel):
             )
             return False
 
-        # Validate email address format
         from_address = self.config.get_from_address()
         if not self._is_valid_email(from_address):
             logger.error(f"❌ Email: Invalid email address: {from_address}")
@@ -144,7 +142,7 @@ class EmailChannel(NotificationChannel):
             >>> msg['Subject']
             'Welcome!'
         """
-        # Create message container
+
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
         from_address = self.config.get_from_address()
@@ -152,14 +150,13 @@ class EmailChannel(NotificationChannel):
         msg["To"] = recipient_email
         msg["X-Mailer"] = "USN Broadcast System"
 
-        # Detect if body is HTML
         is_html = body.lower().startswith("<html") or "<p>" in body.lower() or "<b>" in body.lower()
 
         if is_html:
-            # HTML email
+
             part = MIMEText(body, "html", _charset="utf-8")
         else:
-            # Plain text email
+
             part = MIMEText(body, "plain", _charset="utf-8")
 
         msg.attach(part)
@@ -191,7 +188,7 @@ class EmailChannel(NotificationChannel):
             >>> print(result.status)
             sent
         """
-        # Validate recipient
+
         if not await self.validate_recipient(recipient):
             return DeliveryResult(
                 success=False,
@@ -202,7 +199,7 @@ class EmailChannel(NotificationChannel):
         recipient_email = recipient["email"]
 
         try:
-            # Check if SMTP is configured
+
             if not await self.validate_configuration():
                 return DeliveryResult(
                     success=False,
@@ -210,20 +207,16 @@ class EmailChannel(NotificationChannel):
                     error="SMTP not configured"
                 )
 
-
-            # Create message
             msg = self._create_message(recipient_email, subject, body)
 
-            # Send via SMTP using asyncio in thread pool
             def send_smtp():
-                # Always use SMTP with STARTTLS for port 587
+
                 server = smtplib.SMTP(
                     self.config.SMTP_HOST,
                     self.config.SMTP_PORT,
                     timeout=10
                 )
 
-                # Use STARTTLS for secure connection
                 if self.config.SMTP_USE_TLS:
                     server.starttls()
 
@@ -234,7 +227,6 @@ class EmailChannel(NotificationChannel):
                 server.send_message(msg)
                 server.quit()
 
-            # Run in thread pool to keep async
             loop = asyncio.get_event_loop()
             await loop.run_in_executor(None, send_smtp)
 

@@ -8,7 +8,6 @@ from datetime import datetime, date
 
 Base = declarative_base()
 
-
 class UserModel(Base):
     """Модель пользователя в системе."""
 

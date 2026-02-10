@@ -7,18 +7,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Build paths
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-development-key-change-in-production')
 
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
 ALLOWED_HOSTS = ['*']
 
-# Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -60,14 +56,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'admin_panel.wsgi.application'
 
-# Database Configuration
 import os
 from urllib.parse import urlparse
 
 DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///./bot_database.db')
 
 if DATABASE_URL.startswith('postgresql'):
-    # PostgreSQL: parse connection string
+
     django_url = DATABASE_URL.replace('postgresql+asyncpg://', 'postgresql://')
     parsed = urlparse(django_url)
 
@@ -83,7 +78,7 @@ if DATABASE_URL.startswith('postgresql'):
         }
     }
 else:
-    # SQLite
+
     db_path = DATABASE_URL.replace('sqlite+aiosqlite:///', '').replace('sqlite:///', '').replace('sqlite:', '')
     if not db_path or db_path == './bot_database.db':
         db_path = 'bot_database.db'
@@ -95,7 +90,6 @@ else:
         }
     }
 
-# Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -103,25 +97,20 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# Internationalization
 LANGUAGE_CODE = 'ru-ru'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-# Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'admin_panel', 'staticfiles')
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'admin_panel', 'static')]
 
-# Media files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'admin_panel', 'media')
 
-# Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Admin panel customization
 ADMIN_SITE_HEADER = "USN Telegram Bot - Панель управления"
 ADMIN_SITE_TITLE = "USN Admin"
 ADMIN_SITE_URL = None

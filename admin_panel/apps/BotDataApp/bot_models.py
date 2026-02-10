@@ -7,7 +7,6 @@ import sys
 from django.db import models, connection
 from pathlib import Path
 
-# Add parent directory to path for imports
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
 sys.path.insert(0, str(BASE_DIR))
 
@@ -18,7 +17,6 @@ try:
     SQLALCHEMY_AVAILABLE = True
 except ImportError:
     SQLALCHEMY_AVAILABLE = False
-
 
 class CompetitionManager(models.Manager):
     """Manager for Competition model with custom queries."""
@@ -42,7 +40,6 @@ class CompetitionManager(models.Manager):
             """)
             columns = [col[0] for col in cursor.description]
             return [dict(zip(columns, row)) for row in cursor.fetchall()]
-
 
 class RegistrationManager(models.Manager):
     """Manager for Registration model with custom queries."""
@@ -74,7 +71,6 @@ class RegistrationManager(models.Manager):
             """)
             columns = [col[0] for col in cursor.description]
             return [dict(zip(columns, row)) for row in cursor.fetchall()]
-
 
 class Competition(models.Model):
     """Django model for Competition."""
@@ -125,7 +121,6 @@ class Competition(models.Model):
             )
             return cursor.fetchone()[0]
 
-
 class User(models.Model):
     """Django model for User."""
 
@@ -167,7 +162,6 @@ class User(models.Model):
                 [self.id]
             )
             return cursor.fetchone()[0]
-
 
 class Registration(models.Model):
     """Django model for Registration."""

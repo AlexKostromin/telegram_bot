@@ -5,7 +5,6 @@ from aiogram.types import User
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 
-
 class BotHelpers:
     """Класс со вспомогательными функциями."""
 
@@ -107,10 +106,8 @@ class BotHelpers:
         Returns:
             Список доступных ролей
         """
-        # По умолчанию для всех типов соревнований
         base_roles: List[str] = ["player", "viewer", "voter"]
 
-        # Adviser доступен только для классических игр
         if competition_type.lower() == "classic_game":
             base_roles.insert(1, "adviser")
 
@@ -127,7 +124,6 @@ class BotHelpers:
         Returns:
             Список полей для редактирования
         """
-        # Common fields for all roles
         fields: List[str] = [
             "phone",
             "email",
@@ -138,7 +134,6 @@ class BotHelpers:
             "position",
         ]
 
-        # Additional fields for player and voter
         if role in ["player", "voter"]:
             fields.insert(7, "certificate_name")
             fields.insert(8, "presentation")

@@ -15,7 +15,6 @@ from states import AdminStates
 
 admin_main_router: Router = Router()
 
-
 @admin_main_router.message(Command("admin"))
 @admin_only
 async def admin_command_handler(message: Message, state: FSMContext) -> None:

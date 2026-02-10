@@ -13,7 +13,6 @@ from models import UserModel, RegistrationModel, CompetitionModel, RegistrationS
 
 logger = logging.getLogger(__name__)
 
-
 class RecipientFilter:
     """
     Filter users for broadcast targeting.
@@ -83,7 +82,7 @@ class RecipientFilter:
             ... )
         """
         try:
-            # Build query with JOINs
+
             query = select(
                 UserModel.id,
                 UserModel.telegram_id,
@@ -110,54 +109,43 @@ class RecipientFilter:
                 isouter=True
             )
 
-            # Apply filters
             conditions = []
 
-            # Filter by competition IDs
             if competition_ids:
                 conditions.append(RegistrationModel.competition_id.in_(competition_ids))
 
-            # Filter by roles
             if roles:
                 conditions.append(RegistrationModel.role.in_(roles))
 
-            # Filter by registration status
             if statuses:
-                # Convert status strings to RegistrationStatus enum if needed
+
                 status_enums = [
                     RegistrationStatus(s) if isinstance(s, str) else s
                     for s in statuses
                 ]
                 conditions.append(RegistrationModel.status.in_(status_enums))
 
-            # Filter by countries
             if countries:
                 conditions.append(UserModel.country.in_(countries))
 
-            # Filter by cities
             if cities:
                 conditions.append(UserModel.city.in_(cities))
 
-            # Filter by email
             if has_email:
                 conditions.append(UserModel.email.isnot(None))
                 conditions.append(UserModel.email != '')
 
-            # Apply all conditions
             if conditions:
                 query = query.where(and_(*conditions))
 
-            # Pagination
             if limit:
                 query = query.limit(limit)
             if offset:
                 query = query.offset(offset)
 
-            # Execute query
             result = await self.session.execute(query)
             rows = result.fetchall()
 
-            # Convert to dictionaries
             recipients = []
             for row in rows:
                 recipients.append({
@@ -212,7 +200,7 @@ class RecipientFilter:
             >>> print(f"{count} users will receive broadcast")
         """
         try:
-            # Use same filtering logic as get_recipients
+
             from sqlalchemy import func
 
             query = select(func.count(UserModel.id)).distinct()
@@ -227,7 +215,6 @@ class RecipientFilter:
                 isouter=True
             )
 
-            # Apply same filters
             conditions = []
 
             if competition_ids:
@@ -280,7 +267,7 @@ class RecipientFilter:
             ['USA', 'Russia', 'Germany', ...]
         """
         try:
-            # Get distinct competitions
+
             comp_result = await self.session.execute(
                 select(CompetitionModel.id, CompetitionModel.name).distinct()
             )
@@ -289,7 +276,6 @@ class RecipientFilter:
                 for row in comp_result.fetchall()
             ]
 
-            # Get distinct roles
             role_result = await self.session.execute(
                 select(RegistrationModel.role).distinct().where(
                     RegistrationModel.role.isnot(None)
@@ -297,13 +283,11 @@ class RecipientFilter:
             )
             roles = [row.role for row in role_result.fetchall() if row.role]
 
-            # Get distinct countries
             country_result = await self.session.execute(
                 select(UserModel.country).distinct().order_by(UserModel.country)
             )
             countries = [row.country for row in country_result.fetchall() if row.country]
 
-            # Get distinct cities
             city_result = await self.session.execute(
                 select(UserModel.city).distinct().order_by(UserModel.city)
             )

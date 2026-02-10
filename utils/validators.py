@@ -6,7 +6,6 @@ from typing import Tuple, Union
 from datetime import datetime, date
 from messages import BotMessages
 
-
 class Validators:
     """Класс с методами валидации."""
 
@@ -21,7 +20,6 @@ class Validators:
         Returns:
             Кортеж (is_valid, message)
         """
-        # Паттерн для проверки номера: +7/8 + 10 цифр
         pattern = r"^[+7|8]\d{10}$"
         phone_clean = phone.replace(" ", "").replace("-", "").replace("(", "").replace(")", "")
 
@@ -114,12 +112,10 @@ class Validators:
             try:
                 dob: date = datetime.strptime(date_str.strip(), fmt).date()
 
-                # Check that date is in the past
                 today: date = date.today()
                 if dob >= today:
                     return False, "❌ Дата рождения должна быть в прошлом"
 
-                # Check reasonable age range (10-100 years)
                 age: int = (today - dob).days // 365
                 if age < 10 or age > 100:
                     return False, "❌ Дата рождения должна быть в разумном диапазоне (возраст 10-100 лет)"
@@ -143,11 +139,9 @@ class Validators:
         """
         channel = channel.strip()
 
-        # Remove @ if present
         if channel.startswith("@"):
             channel = channel[1:]
 
-        # Check pattern: alphanumeric and underscore only
         if not re.match(r"^[a-zA-Z0-9_]{5,32}$", channel):
             return False, "❌ Имя канала должно содержать 5-32 символа (буквы, цифры, подчеркивание)"
 
@@ -168,7 +162,7 @@ class Validators:
         bio = bio.strip()
 
         if len(bio) == 0:
-            return True, ""  # Allow empty bio
+            return True, ""
 
         if len(bio) > max_length:
             return False, f"❌ Биография не должна превышать {max_length} символов"

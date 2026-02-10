@@ -9,7 +9,6 @@ from messages.texts import BotMessages
 
 logger = logging.getLogger(__name__)
 
-
 async def notify_user(
     bot: Bot,
     telegram_id: int,
@@ -28,7 +27,6 @@ async def notify_user(
         logger.error(f"❌ Ошибка отправки сообщения пользователю {telegram_id}: {e}")
         print(f"❌ Error sending notification to user {telegram_id}: {e}")
         raise
-
 
 async def notify_admins_new_registration(
     bot: Bot,
@@ -56,7 +54,6 @@ async def notify_admins_new_registration(
         except Exception as e:
             print(f"Error sending notification to admin {admin_id}: {e}")
 
-
 async def notify_user_approved(bot: Bot, telegram_id: int, competition_name: str) -> None:
     """Notify user about registration approval."""
     message: str = f"""
@@ -69,7 +66,6 @@ async def notify_user_approved(bot: Bot, telegram_id: int, competition_name: str
         await bot.send_message(telegram_id, message)
     except Exception as e:
         print(f"Error notifying user {telegram_id}: {e}")
-
 
 async def notify_user_rejected(bot: Bot, telegram_id: int, competition_name: str, reason: Optional[str] = None) -> None:
     """Notify user about registration rejection."""
@@ -85,7 +81,6 @@ async def notify_user_rejected(bot: Bot, telegram_id: int, competition_name: str
     except Exception as e:
         print(f"Error notifying user {telegram_id}: {e}")
 
-
 async def notify_user_revoked(bot: Bot, telegram_id: int, competition_name: str) -> None:
     """Notify user about registration revocation."""
     message: str = f"""
@@ -96,7 +91,6 @@ async def notify_user_revoked(bot: Bot, telegram_id: int, competition_name: str)
         await bot.send_message(telegram_id, message)
     except Exception as e:
         print(f"Error notifying user {telegram_id}: {e}")
-
 
 async def send_email(
     email_address: str,
@@ -143,7 +137,6 @@ async def send_email(
             server.send_message(message)
             server.quit()
 
-        # Run in thread pool to keep async
         loop = asyncio.get_event_loop()
         await loop.run_in_executor(None, send_smtp)
 

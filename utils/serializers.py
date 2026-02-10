@@ -5,7 +5,6 @@ from datetime import date, datetime
 from typing import Optional, List, Any, Dict, Union
 from models import UserModel, CompetitionModel, RegistrationModel
 
-
 class BaseSerializer:
     """Базовый класс сериализатора."""
 
@@ -22,7 +21,6 @@ class BaseSerializer:
     def serialize_datetime(value: Optional[datetime]) -> Optional[str]:
         """Преобразовать datetime в ISO формат."""
         return value.isoformat() if value else None
-
 
 class UserSerializer(BaseSerializer):
     """Сериализатор для модели User."""
@@ -85,7 +83,6 @@ class UserSerializer(BaseSerializer):
             "club": user.club,
         }
 
-
 class CompetitionSerializer(BaseSerializer):
     """Сериализатор для модели Competition."""
 
@@ -129,7 +126,6 @@ class CompetitionSerializer(BaseSerializer):
             CompetitionSerializer.serialize_for_selection(comp)
             for comp in competitions
         ]
-
 
 class RegistrationSerializer(BaseSerializer):
     """Сериализатор для модели Registration."""

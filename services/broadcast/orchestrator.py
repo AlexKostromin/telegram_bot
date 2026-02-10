@@ -21,7 +21,6 @@ from .recipient_filter import RecipientFilter
 
 logger = logging.getLogger(__name__)
 
-
 class BroadcastOrchestrator:
     """
     Orchestrator for executing broadcast campaigns.
@@ -47,7 +46,7 @@ class BroadcastOrchestrator:
     def __init__(
         self,
         session: AsyncSession,
-        bot=None,  # aiogram Bot instance
+        bot=None,
     ):
         """
         Initialize orchestrator.
@@ -61,7 +60,6 @@ class BroadcastOrchestrator:
         self.renderer = TemplateRenderer()
         self.recipient_filter = RecipientFilter(session)
 
-        # Initialize notification channels
         self.channels: Dict[str, NotificationChannel] = {}
 
         if bot:
@@ -91,23 +89,20 @@ class BroadcastOrchestrator:
             ...     print(sample['rendered_subject'])
         """
         try:
-            # Load broadcast and template
+
             broadcast = await self._load_broadcast(broadcast_id)
             if not broadcast:
                 return {'error': f'Broadcast {broadcast_id} not found'}
 
             template = broadcast.template
 
-            # Count recipients
             total = await self.recipient_filter.count_recipients(**broadcast.filters)
 
-            # Get sample recipients
             samples_data = await self.recipient_filter.get_recipients(
                 limit=sample_size,
                 **broadcast.filters
             )
 
-            # Render samples
             samples = []
             for recipient in samples_data:
                 subject = self.renderer.render(template.subject, recipient)
@@ -168,7 +163,7 @@ class BroadcastOrchestrator:
             >>> print(f"Failed {stats['failed']} messages")
         """
         try:
-            # Load broadcast and template
+
             broadcast = await self._load_broadcast(broadcast_id)
             if not broadcast:
                 logger.error(f"❌ Broadcast {broadcast_id} not found")
@@ -177,14 +172,12 @@ class BroadcastOrchestrator:
             template = broadcast.template
             logger.info(f"📢 Starting broadcast '{broadcast.name}' (template: {template.name})")
 
-            # Update broadcast status
             if not dry_run:
                 broadcast.status = BroadcastStatus.in_progress
                 broadcast.started_at = datetime.utcnow()
                 await self.session.merge(broadcast)
                 await self.session.commit()
 
-            # Get recipients
             recipients = await self.recipient_filter.get_recipients(**broadcast.filters)
             logger.info(f"📋 Found {len(recipients)} recipients")
 
@@ -205,7 +198,6 @@ class BroadcastOrchestrator:
                     'error': 'No recipients found'
                 }
 
-            # Create BroadcastRecipient records
             if not dry_run:
                 for recipient in recipients:
                     broadcast_recipient = BroadcastRecipient(
@@ -219,7 +211,6 @@ class BroadcastOrchestrator:
                 await self.session.commit()
                 logger.info(f"✅ Created {len(recipients)} BroadcastRecipient records")
 
-            # Send messages
             sent_count = 0
             failed_count = 0
             results = []
@@ -239,7 +230,6 @@ class BroadcastOrchestrator:
                 else:
                     failed_count += 1
 
-            # Update broadcast statistics
             if not dry_run:
                 broadcast.sent_count = sent_count
                 broadcast.failed_count = failed_count
@@ -284,7 +274,7 @@ class BroadcastOrchestrator:
         Returns:
             Result dictionary with delivery status for each channel
         """
-        # Render templates for recipient
+
         try:
             subject = self.renderer.render(template.subject, recipient)
             body_telegram = self.renderer.render(template.body_telegram, recipient)
@@ -304,7 +294,6 @@ class BroadcastOrchestrator:
             'channels': {},
         }
 
-        # Send via Telegram
         if broadcast.send_telegram and self._channel_enabled('telegram'):
             if dry_run:
                 result['channels']['telegram'] = {'status': 'simulated'}
@@ -316,7 +305,6 @@ class BroadcastOrchestrator:
                 )
                 result['channels']['telegram'] = tg_result
 
-        # Send via Email
         if broadcast.send_email and self._channel_enabled('email'):
             if dry_run:
                 result['channels']['email'] = {'status': 'simulated'}
@@ -329,7 +317,6 @@ class BroadcastOrchestrator:
                 )
                 result['channels']['email'] = email_result
 
-        # Broadcast is successful if any channel succeeded
         result['success'] = any(
             ch.get('success', False)
             for ch in result['channels'].values()
@@ -349,10 +336,8 @@ class BroadcastOrchestrator:
             if not channel:
                 return {'status': 'disabled'}
 
-            # Send
             delivery = await channel.send(recipient, '', body)
 
-            # Update database
             if delivery.success:
                 await self._update_recipient_status(
                     broadcast_id,
@@ -397,10 +382,8 @@ class BroadcastOrchestrator:
             if not channel:
                 return {'status': 'disabled'}
 
-            # Send
             delivery = await channel.send(recipient, subject, body)
 
-            # Update database
             if delivery.success:
                 await self._update_recipient_status(
                     broadcast_id,

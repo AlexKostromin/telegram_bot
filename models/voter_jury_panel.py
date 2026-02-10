@@ -5,7 +5,6 @@ from datetime import datetime
 from sqlalchemy import Column, Integer, DateTime, ForeignKey
 from models.user import Base
 
-
 class VoterJuryPanelModel(Base):
     """Model for voter to jury panel assignment."""
 

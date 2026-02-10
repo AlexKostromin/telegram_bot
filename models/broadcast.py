@@ -9,24 +9,21 @@ from enum import Enum as PyEnum
 
 from models.user import Base
 
-
 class BroadcastStatus(PyEnum):
     """Статусы рассылки."""
-    draft = "draft"                    # Черновик
-    scheduled = "scheduled"            # Запланирована
-    in_progress = "in_progress"        # В процессе отправки
-    completed = "completed"            # Завершена
-    failed = "failed"                  # Ошибка
-
+    draft = "draft"
+    scheduled = "scheduled"
+    in_progress = "in_progress"
+    completed = "completed"
+    failed = "failed"
 
 class DeliveryStatus(PyEnum):
     """Статусы доставки сообщения."""
-    pending = "pending"                # Ожидает отправки
-    sent = "sent"                      # Отправлено
-    delivered = "delivered"            # Доставлено
-    failed = "failed"                  # Ошибка доставки
-    blocked = "blocked"                # Бот заблокирован пользователем
-
+    pending = "pending"
+    sent = "sent"
+    delivered = "delivered"
+    failed = "failed"
+    blocked = "blocked"
 
 class MessageTemplate(Base):
     """Шаблон сообщения для рассылки."""
@@ -38,23 +35,18 @@ class MessageTemplate(Base):
     name: str = Column(String(255), unique=True, nullable=False, index=True)
     description: Optional[str] = Column(Text, nullable=True)
 
-    # Содержание
-    subject: str = Column(String(500), nullable=False)              # Тема для email
-    body_telegram: str = Column(Text, nullable=False)               # Текст для Telegram
-    body_email: str = Column(Text, nullable=False)                  # HTML/text для Email
+    subject: str = Column(String(500), nullable=False)
+    body_telegram: str = Column(Text, nullable=False)
+    body_email: str = Column(Text, nullable=False)
 
-    # Переменные
     available_variables: Dict[str, str] = Column(JSON, nullable=False, default={})
 
-    # Состояние
     is_active: bool = Column(Boolean, default=True, index=True)
 
-    # Мета
-    created_by: Optional[int] = Column(Integer, nullable=True)      # Admin telegram_id
+    created_by: Optional[int] = Column(Integer, nullable=True)
     created_at: datetime = Column(DateTime, default=datetime.utcnow, index=True)
     updated_at: datetime = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # Отношения (не типизированы для совместимости с SQLAlchemy 2.0)
     broadcasts = relationship("Broadcast", back_populates="template")
 
     def __str__(self) -> str:
@@ -65,7 +57,6 @@ class MessageTemplate(Base):
         """Подробное представление шаблона."""
         return f"<MessageTemplate id={self.id} name='{self.name}' is_active={self.is_active}>"
 
-
 class Broadcast(Base):
     """Рассылка сообщений группе пользователей."""
 
@@ -75,38 +66,29 @@ class Broadcast(Base):
     id: int = Column(Integer, primary_key=True)
     name: str = Column(String(255), nullable=False, index=True)
 
-    # Связь с шаблоном
     template_id: int = Column(Integer, ForeignKey("message_templates.id"), nullable=False)
     template = relationship("MessageTemplate", back_populates="broadcasts")
 
-    # Фильтры получателей (JSON)
     filters: Dict[str, Any] = Column(JSON, nullable=False, default={})
 
-    # Выбор каналов
     send_telegram: bool = Column(Boolean, default=True)
     send_email: bool = Column(Boolean, default=False)
 
-    # Планирование
     scheduled_at: Optional[datetime] = Column(DateTime, nullable=True)
 
-    # Статус рассылки
     status: BroadcastStatus = Column(Enum(BroadcastStatus), default=BroadcastStatus.draft, index=True)
 
-    # Статистика
     total_recipients: int = Column(Integer, default=0)
     sent_count: int = Column(Integer, default=0)
     failed_count: int = Column(Integer, default=0)
 
-    # Времена
     started_at: Optional[datetime] = Column(DateTime, nullable=True)
     completed_at: Optional[datetime] = Column(DateTime, nullable=True)
 
-    # Мета
-    created_by: int = Column(Integer, nullable=False)               # Admin telegram_id
+    created_by: int = Column(Integer, nullable=False)
     created_at: datetime = Column(DateTime, default=datetime.utcnow, index=True)
     updated_at: datetime = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # Отношения (не типизированы для совместимости с SQLAlchemy 2.0)
     recipients = relationship("BroadcastRecipient", back_populates="broadcast", cascade="all, delete-orphan")
 
     def __str__(self) -> str:
@@ -130,7 +112,6 @@ class Broadcast(Base):
         """Проверить, завершена ли рассылка."""
         return self.status in (BroadcastStatus.completed, BroadcastStatus.failed)
 
-
 class BroadcastRecipient(Base):
     """Информация о доставке сообщения конкретному пользователю."""
 
@@ -139,14 +120,12 @@ class BroadcastRecipient(Base):
 
     id: int = Column(Integer, primary_key=True)
 
-    # Связь с рассылкой и пользователем
     broadcast_id: int = Column(Integer, ForeignKey("broadcasts.id"), nullable=False, index=True)
     broadcast = relationship("Broadcast", back_populates="recipients")
 
     user_id: int = Column(Integer, nullable=False, index=True)
     telegram_id: int = Column(Integer, nullable=False, index=True)
 
-    # Доставка в Telegram
     telegram_status: DeliveryStatus = Column(
         Enum(DeliveryStatus),
         default=DeliveryStatus.pending,
@@ -156,7 +135,6 @@ class BroadcastRecipient(Base):
     telegram_error: Optional[str] = Column(Text, nullable=True)
     telegram_message_id: Optional[int] = Column(Integer, nullable=True)
 
-    # Доставка по Email
     email_status: DeliveryStatus = Column(
         Enum(DeliveryStatus),
         default=DeliveryStatus.pending,
@@ -166,11 +144,9 @@ class BroadcastRecipient(Base):
     email_error: Optional[str] = Column(Text, nullable=True)
     email_address: Optional[str] = Column(String(255), nullable=True)
 
-    # Отрендеренное содержание (для аудита)
     rendered_subject: Optional[str] = Column(String(500), nullable=True)
     rendered_body: Optional[str] = Column(Text, nullable=True)
 
-    # Мета
     created_at: datetime = Column(DateTime, default=datetime.utcnow, index=True)
     updated_at: datetime = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

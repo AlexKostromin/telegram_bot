@@ -9,9 +9,7 @@ from aiogram.fsm.context import FSMContext
 from messages import BotMessages
 from keyboards import InlineKeyboards
 
-# Создание роутера
 start_router = Router()
-
 
 @start_router.message(Command("start"))
 async def start_handler(message: Message, state: FSMContext) -> None:
@@ -22,15 +20,13 @@ async def start_handler(message: Message, state: FSMContext) -> None:
         message: Объект сообщения
         state: Контекст FSM
     """
-    # Очистить состояние
+
     await state.clear()
 
-    # Отправить приветственное сообщение
     await message.answer(
         BotMessages.MAIN_MENU_START,
         reply_markup=InlineKeyboards.main_menu_keyboard(),
     )
-
 
 @start_router.message(Command("help"))
 async def help_handler(message: Message) -> None:

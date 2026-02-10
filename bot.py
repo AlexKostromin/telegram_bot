@@ -21,7 +21,6 @@ from handlers import (
     admin_competitions_router,
 )
 
-
 class USNBot:
     """Класс для управления Telegram ботом USN."""
 
@@ -36,8 +35,6 @@ class USNBot:
 
     def _register_handlers(self) -> None:
         """Регистрировать все обработчики."""
-        # Регистрировать роутеры в правильном порядке
-        # Admin routers FIRST for priority
         self.dispatcher.include_routers(
             admin_main_router,
             admin_applications_router,

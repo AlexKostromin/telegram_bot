@@ -12,9 +12,7 @@ from states import RegistrationStates
 from utils import db_manager
 from models import UserModel, CompetitionModel
 
-# Создание роутера
 role_select_router = Router()
-
 
 @role_select_router.callback_query(F.data.startswith("role_"), RegistrationStates.waiting_for_role_select)
 async def role_select_callback(query: CallbackQuery, state: FSMContext) -> None:
@@ -25,14 +23,12 @@ async def role_select_callback(query: CallbackQuery, state: FSMContext) -> None:
         query: Объект callback query
         state: Контекст FSM
     """
-    # Извлечь выбранную роль
+
     selected_role: str = query.data.split("_")[1]
 
-    # Проверить, открыта ли регистрация для этой роли
     data: Dict[str, Any] = await state.get_data()
     competition_data: Union[Dict[str, Any], int] = data.get('selected_competition')
 
-    # Извлечь ID из словаря соревнования
     competition_id: int
     if isinstance(competition_data, dict):
         competition_id = competition_data.get('id')
@@ -45,17 +41,14 @@ async def role_select_callback(query: CallbackQuery, state: FSMContext) -> None:
         await query.answer("⚠️ Регистрация для этой роли закрыта", show_alert=True)
         return
 
-    # Сохранить роль в состояние
     await state.update_data(selected_role=selected_role)
 
-    # Получить telegram_id пользователя
     user_telegram_id: int = query.from_user.id
 
-    # Проверить, есть ли пользователь в системе
     existing_user: Optional[UserModel] = await db_manager.get_user_by_telegram_id(user_telegram_id)
 
     if existing_user:
-        # Пользователь уже существует - показать его данные
+
         await state.set_state(RegistrationStates.waiting_for_existing_user_confirmation)
         await query.message.edit_text(
             f"Добрый день, {existing_user.first_name} {existing_user.last_name}!\n\n"
@@ -74,7 +67,7 @@ async def role_select_callback(query: CallbackQuery, state: FSMContext) -> None:
             reply_markup=InlineKeyboards.yes_no_keyboard(),
         )
     else:
-        # Пользователь новый - начать сбор данных
+
         await state.set_state(RegistrationStates.waiting_for_first_name)
         await query.message.edit_text(
             BotMessages.REQUEST_FIRST_NAME,

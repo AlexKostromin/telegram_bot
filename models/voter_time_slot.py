@@ -5,7 +5,6 @@ from datetime import datetime
 from sqlalchemy import Column, Integer, DateTime, ForeignKey
 from models.user import Base
 
-
 class VoterTimeSlotModel(Base):
     """Model for voter to time slot assignment."""
 

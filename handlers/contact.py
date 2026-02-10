@@ -16,9 +16,7 @@ from utils.notifications import send_email
 
 logger = logging.getLogger(__name__)
 
-# Создание роутера
 contact_router = Router()
-
 
 @contact_router.message(StateFilter(ContactStates.waiting_for_message))
 async def contact_message_handler(message: Message, state: FSMContext, bot: Bot) -> None:
@@ -31,21 +29,19 @@ async def contact_message_handler(message: Message, state: FSMContext, bot: Bot)
         state: Контекст FSM
         bot: Telegram бот
     """
-    # Получить данные сообщения
+
     user_message: str = message.text
     user_id: int = message.from_user.id
     username: str = message.from_user.username or "Неизвестно"
     first_name: str = message.from_user.first_name or "Unknown"
     last_name: str = message.from_user.last_name or ""
 
-    # Получить конфигурацию поддержки
     smtp_config = SMTPConfig()
     support_email = smtp_config.SUPPORT_EMAIL
     support_telegram_id = smtp_config.SUPPORT_TELEGRAM_ID
 
     logger.info(f"📧 Support message from user {user_id} (@{username})")
 
-    # Отправить через Email
     if support_email:
         try:
             email_subject = f"📧 Сообщение из поддержки бота от @{username}"
@@ -76,7 +72,6 @@ async def contact_message_handler(message: Message, state: FSMContext, bot: Bot)
         except Exception as e:
             logger.error(f"❌ Error sending support email: {e}")
 
-    # Отправить через Telegram
     if support_telegram_id and support_telegram_id > 0:
         try:
             telegram_message = f"""
@@ -99,7 +94,6 @@ async def contact_message_handler(message: Message, state: FSMContext, bot: Bot)
         except Exception as e:
             logger.error(f"❌ Error sending support message to Telegram: {e}")
 
-    # Отправить подтверждение пользователю
     await message.answer(
         BotMessages.CONTACT_SUCCESS,
         reply_markup=InlineKeyboards.main_menu_keyboard(),
@@ -107,5 +101,4 @@ async def contact_message_handler(message: Message, state: FSMContext, bot: Bot)
 
     logger.info(f"✅ Confirmation sent to user {user_id}")
 
-    # Очистить состояние
     await state.clear()

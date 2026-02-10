@@ -21,7 +21,6 @@ from .channels import NotificationChannel, DeliveryResult
 
 logger = logging.getLogger(__name__)
 
-
 class TelegramChannel(NotificationChannel):
     """
     Notification channel for sending messages via Telegram.
@@ -45,7 +44,6 @@ class TelegramChannel(NotificationChannel):
         Telegram: sent
     """
 
-    # Rate limiting: 0.05 seconds = 20 messages per second
     RATE_LIMIT_DELAY: float = 0.05
 
     def __init__(self, bot: Bot):
@@ -79,7 +77,6 @@ class TelegramChannel(NotificationChannel):
             ...     print("Telegram ready to send")
         """
         try:
-            # Try to get bot info (lightweight check)
             me = await self.bot.get_me()
             logger.info(f"✅ Telegram bot configured: @{me.username}")
             return True
@@ -106,7 +103,6 @@ class TelegramChannel(NotificationChannel):
             >>> await telegram.validate_recipient({'email': 'user@example.com'})
             False
         """
-        # Recipient must have telegram_id
         if not isinstance(recipient.get("telegram_id"), int):
             return False
         return recipient["telegram_id"] > 0
@@ -153,7 +149,6 @@ class TelegramChannel(NotificationChannel):
             >>> if result.success:
             ...     print(f"Message {result.message_id} sent")
         """
-        # Validate recipient
         if not await self.validate_recipient(recipient):
             return DeliveryResult(
                 success=False,
@@ -164,10 +159,8 @@ class TelegramChannel(NotificationChannel):
         telegram_id = recipient["telegram_id"]
 
         try:
-            # Apply rate limiting
             await self._apply_rate_limit()
 
-            # Send message (HTML parsing for bold, italic, etc)
             message = await self.bot.send_message(
                 chat_id=telegram_id,
                 text=body,
@@ -184,7 +177,6 @@ class TelegramChannel(NotificationChannel):
             )
 
         except TelegramForbiddenError:
-            # Bot blocked by user or user blocked by Telegram
             error_msg = f"Bot blocked by user {telegram_id}"
             logger.warning(f"⚠️  {error_msg}")
             return DeliveryResult(
@@ -194,7 +186,6 @@ class TelegramChannel(NotificationChannel):
             )
 
         except TelegramBadRequest as e:
-            # Invalid request (e.g., wrong message format, invalid telegram_id)
             error_msg = f"Bad request for user {telegram_id}: {str(e)}"
             logger.error(f"❌ {error_msg}")
             return DeliveryResult(
@@ -204,7 +195,6 @@ class TelegramChannel(NotificationChannel):
             )
 
         except TelegramServerError as e:
-            # Telegram server error (500, 503, etc) - usually temporary
             error_msg = f"Telegram server error for user {telegram_id}: {str(e)}"
             logger.error(f"❌ {error_msg}")
             return DeliveryResult(
@@ -214,7 +204,6 @@ class TelegramChannel(NotificationChannel):
             )
 
         except Exception as e:
-            # Unexpected error
             error_msg = f"Unexpected error sending to {telegram_id}: {str(e)}"
             logger.error(f"❌ {error_msg}")
             return DeliveryResult(
@@ -240,8 +229,7 @@ class TelegramChannel(NotificationChannel):
         """Detailed representation."""
         username = "unknown"
         try:
-            # Try to get username from bot (sync operation)
-            # Note: This is a simplified check, in production use async
+
             username = f"@{self.bot.session}"
         except Exception:
             pass

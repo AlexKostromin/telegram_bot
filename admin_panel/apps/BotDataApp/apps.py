@@ -3,7 +3,6 @@ App configuration for Bot Data Management.
 """
 from django.apps import AppConfig
 
-
 class BotDataAppConfig(AppConfig):
     """Bot Data App configuration."""
 

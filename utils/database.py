@@ -12,7 +12,6 @@ from models import (
 )
 from migrations.migration_manager import MigrationManager
 
-
 class DatabaseManager:
     """Класс для управления подключением к БД."""
 
@@ -26,7 +25,6 @@ class DatabaseManager:
         from config import DB_TYPE, PG_POOL_SIZE, PG_MAX_OVERFLOW
 
         if DB_TYPE == "postgresql":
-            # PostgreSQL: Connection pooling + async table creation
             self.engine = create_async_engine(
                 DATABASE_URL,
                 echo=False,
@@ -35,12 +33,10 @@ class DatabaseManager:
                 pool_pre_ping=True,
             )
 
-            # Create tables async
             async with self.engine.begin() as conn:
                 await conn.run_sync(Base.metadata.create_all)
 
         elif DB_TYPE == "sqlite":
-            # SQLite: Legacy sync approach
             import sqlalchemy
             sync_url = DATABASE_URL.replace('sqlite+aiosqlite:', 'sqlite:')
             sync_engine = sqlalchemy.create_engine(sync_url, echo=False)
@@ -49,12 +45,10 @@ class DatabaseManager:
 
             self.engine = create_async_engine(DATABASE_URL, echo=False)
 
-        # Create session maker
         self.async_session_maker = sessionmaker(
             self.engine, class_=AsyncSession, expire_on_commit=False
         )
 
-        # Run migrations
         migration_manager = MigrationManager(self.engine, self.async_session_maker)
         await migration_manager.run_migrations()
 
@@ -158,8 +152,6 @@ class DatabaseManager:
             )
             return result.scalar_one_or_none() is not None
 
-    # ===== REGISTRATION APPROVAL METHODS =====
-
     async def get_pending_registrations(self, competition_id=None, role=None) -> list:
         """Получить заявки со статусом pending."""
         async with self.get_session() as session:
@@ -249,8 +241,6 @@ class DatabaseManager:
                 "competition_name": competition.name if competition else None,
             }
 
-    # ===== TIME SLOT METHODS =====
-
     async def get_time_slots_for_competition(self, competition_id: int) -> list:
         """Получить все временные слоты для соревнования."""
         async with self.get_session() as session:
@@ -284,7 +274,7 @@ class DatabaseManager:
             available = []
 
             for slot in time_slots:
-                # Count voters already assigned
+
                 result = await session.execute(
                     select(VoterTimeSlotModel).where(
                         VoterTimeSlotModel.time_slot_id == slot.id
@@ -329,8 +319,6 @@ class DatabaseManager:
                     time_slots.append(time_slot)
 
             return time_slots
-
-    # ===== JURY PANEL METHODS =====
 
     async def get_jury_panels_for_competition(self, competition_id: int) -> list:
         """Получить судейские коллегии."""
@@ -385,8 +373,6 @@ class DatabaseManager:
 
             return jury_panels
 
-    # ===== COMPETITION MANAGEMENT METHODS =====
-
     async def update_role_entry_status(self, competition_id: int, role: str, is_open: bool) -> CompetitionModel:
         """Обновить статус открытия регистрации для конкретной роли."""
         async with self.get_session() as session:
@@ -398,8 +384,6 @@ class DatabaseManager:
                     session.add(competition)
                     await session.commit()
             return competition
-
-    # ===== BROADCAST MANAGEMENT METHODS =====
 
     async def create_message_template(
         self,
@@ -477,7 +461,6 @@ class DatabaseManager:
             if not broadcast:
                 return {}
 
-            # Get recipient statistics
             result = await session.execute(
                 select(BroadcastRecipient).where(
                     BroadcastRecipient.broadcast_id == broadcast_id
@@ -485,7 +468,6 @@ class DatabaseManager:
             )
             recipients = result.scalars().all()
 
-            # Calculate stats
             total = len(recipients)
             telegram_sent = sum(1 for r in recipients if r.telegram_status == 'sent')
             email_sent = sum(1 for r in recipients if r.email_status == 'sent')
@@ -516,6 +498,4 @@ class DatabaseManager:
             result = await session.execute(query.order_by(MessageTemplate.created_at.desc()))
             return result.scalars().all()
 
-
-# Глобальный экземпляр менеджера БД
 db_manager = DatabaseManager()

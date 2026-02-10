@@ -11,7 +11,6 @@ import json
 
 from .models import SQLiteDataHelper, AdminLog
 
-
 class DashboardView(LoginRequiredMixin, TemplateView):
     """Dashboard view with bot statistics."""
 
@@ -21,7 +20,6 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
 
         try:
-            # Bot statistics
             context['user_count'] = SQLiteDataHelper.get_user_count()
             context['competition_count'] = SQLiteDataHelper.get_competition_count()
             context['registration_count'] = SQLiteDataHelper.get_registration_count()
@@ -30,13 +28,11 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             context['users_by_role'] = SQLiteDataHelper.get_users_by_role()
             context['active_competitions'] = SQLiteDataHelper.get_active_competitions()
 
-            # Admin logs
             context['recent_logs'] = AdminLog.objects.all()[:10]
         except Exception as e:
             context['error'] = f"Failed to load statistics: {str(e)}"
 
         return context
-
 
 class RegistrationsView(LoginRequiredMixin, TemplateView):
     """View for managing registrations."""
@@ -64,7 +60,6 @@ class RegistrationsView(LoginRequiredMixin, TemplateView):
 
         return context
 
-
 class UsersView(LoginRequiredMixin, TemplateView):
     """View for managing users."""
 
@@ -90,7 +85,6 @@ class UsersView(LoginRequiredMixin, TemplateView):
 
         return context
 
-
 class CompetitionsView(LoginRequiredMixin, TemplateView):
     """View for managing competitions."""
 
@@ -115,7 +109,6 @@ class CompetitionsView(LoginRequiredMixin, TemplateView):
 
         return context
 
-
 @login_required
 def bot_stats_api(request):
     """API endpoint for bot statistics."""
@@ -130,7 +123,6 @@ def bot_stats_api(request):
         return JsonResponse({'success': True, 'data': data})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
-
 
 @login_required
 def registration_detail(request, registration_id):

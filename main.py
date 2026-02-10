@@ -11,20 +11,17 @@ from models import CompetitionModel
 import json
 from sqlalchemy import select
 
-# Настройка логирования
 logging.basicConfig(
     level=getattr(logging, LOGGING_LEVEL, logging.INFO),
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
 
-
 async def init_sample_data() -> None:
     """Добавить примеры соревнований в БД если их еще нет."""
     logger.info("=== STARTING init_sample_data ===")
     try:
         async with db_manager.get_session() as session:
-            # Проверить, есть ли уже соревнования
             result = await session.execute(select(CompetitionModel))
             existing_competitions = result.scalars().all()
             logger.info(f"Found {len(existing_competitions)} existing competitions")
@@ -34,7 +31,6 @@ async def init_sample_data() -> None:
                 return
 
             logger.info("Adding sample competitions...")
-            # Добавить тестовые соревнования
             competitions = [
             CompetitionModel(
                 name="Чемпионат USN 2024",
@@ -85,17 +81,15 @@ async def init_sample_data() -> None:
     except Exception as e:
         logger.error(f"Error in init_sample_data: {e}", exc_info=True)
 
-
 async def main() -> None:
     """Главная функция для запуска бота."""
     logger.info("Инициализация Telegram бота USN...")
 
     try:
-        # Инициализировать БД
+
         await db_manager.init_db()
         logger.info("База данных инициализирована")
 
-        # Добавить sample данные если нужно
         logger.info("BEFORE init_sample_data")
         await init_sample_data()
         logger.info("AFTER init_sample_data")
@@ -103,7 +97,6 @@ async def main() -> None:
         logger.error(f"Error during initialization: {e}", exc_info=True)
         raise
 
-    # Создать и запустить бот
     bot: USNBot = USNBot()
     logger.info("Бот инициализирован")
 
@@ -118,7 +111,6 @@ async def main() -> None:
         await db_manager.close_db()
         await bot.close()
         logger.info("Бот выключен")
-
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -6,7 +6,6 @@ from aiogram.utils.keyboard import ReplyKeyboardBuilder
 
 from messages import BotMessages
 
-
 class ReplyKeyboards:
     """Класс с reply-клавиатурами."""
 

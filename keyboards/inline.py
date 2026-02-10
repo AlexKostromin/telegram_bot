@@ -7,7 +7,6 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from messages import BotMessages
 
-
 class InlineKeyboards:
     """Класс с инлайн-клавиатурами."""
 

@@ -17,7 +17,6 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-
 class TemplateRenderer:
     """
     Render message templates with variable substitution using Jinja2.
@@ -43,7 +42,6 @@ class TemplateRenderer:
         Welcome John to Chess Tournament 2024!
     """
 
-    # Default available variables for templates
     DEFAULT_VARIABLES: Dict[str, str] = {
         'first_name': 'User first name',
         'last_name': 'User last name',
@@ -101,16 +99,11 @@ class TemplateRenderer:
             Hello Alice, your score is 95
         """
         try:
-            # Create Jinja2 template
             template = self.env.from_string(template_text)
 
-            # Render with context
             if strict:
-                # Strict mode: fail on undefined variables
                 result = template.render(context)
             else:
-                # Lenient mode: use empty string for undefined variables
-                # Filter context to only include variables in template
                 safe_context = {k: v for k, v in context.items() if k in self.extract_variables(template_text)}
                 result = template.render(**safe_context)
 
@@ -146,7 +139,6 @@ class TemplateRenderer:
             >>> print(vars)
             {'first_name', 'last_name'}
         """
-        # Find all {{ variable }} patterns
         pattern = r'\{\{\s*(\w+)(?:\s*[|].*?)?\s*\}\}'
         matches = re.findall(pattern, template_text)
         return set(matches)
@@ -216,22 +208,17 @@ class TemplateRenderer:
             >>> print(preview)
             Hello User first name
         """
-        # Extract variables from template
         variables = self.extract_variables(template_text)
 
-        # Create preview context
         preview_context = {}
         for var in variables:
             if sample_data and var in sample_data:
                 preview_context[var] = sample_data[var]
             elif var in self.DEFAULT_VARIABLES:
-                # Use variable description as preview
                 preview_context[var] = f"[{self.DEFAULT_VARIABLES[var]}]"
             else:
-                # Unknown variable
                 preview_context[var] = f"[{var}]"
 
-        # Render
         try:
             rendered = self.render(template_text, preview_context)
             return (rendered, preview_context)

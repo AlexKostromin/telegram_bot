@@ -6,7 +6,6 @@ from sqlalchemy import Column, Integer, String, DateTime, Boolean, JSON
 from datetime import datetime
 from models.user import Base
 
-
 class CompetitionModel(Base):
     """Модель соревнования в системе."""
 
@@ -15,8 +14,8 @@ class CompetitionModel(Base):
     id: int = Column(Integer, primary_key=True)
     name: str = Column(String(255), nullable=False)
     description: Optional[str] = Column(String(500), nullable=True)
-    competition_type: str = Column(String(50), nullable=False)  # classic_game, puzzle, etc.
-    available_roles: List = Column(JSON, nullable=False)  # ["player", "adviser", "viewer", "voter"]
+    competition_type: str = Column(String(50), nullable=False)
+    available_roles: List = Column(JSON, nullable=False)
     player_entry_open: bool = Column(Boolean, default=True)
     voter_entry_open: bool = Column(Boolean, default=True)
     viewer_entry_open: bool = Column(Boolean, default=True)

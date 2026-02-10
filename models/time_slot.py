@@ -6,7 +6,6 @@ from datetime import datetime, date, time
 from sqlalchemy import Column, Integer, Date, Time, Boolean, DateTime, ForeignKey
 from models.user import Base
 
-
 class TimeSlotModel(Base):
     """Model for time slots in competitions."""
 

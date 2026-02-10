@@ -12,9 +12,6 @@ import os
 from .models import BotDashboardStat, AdminLog, SQLiteDataHelper
 from django.db import models as django_models
 
-
-# ============ Bot Models (Django wrappers for SQLite tables) ============
-
 class Competition(django_models.Model):
     """Django model for Competition."""
     id = django_models.IntegerField(primary_key=True, verbose_name='ID')
@@ -61,7 +58,6 @@ class Competition(django_models.Model):
             )
             return cursor.fetchone()[0]
 
-
 class User(django_models.Model):
     """Django model for User."""
     id = django_models.IntegerField(primary_key=True, verbose_name='ID')
@@ -102,7 +98,6 @@ class User(django_models.Model):
                 [self.id]
             )
             return cursor.fetchone()[0]
-
 
 class Registration(django_models.Model):
     """Django model for Registration."""
@@ -155,7 +150,6 @@ class Registration(django_models.Model):
         except Competition.DoesNotExist:
             return None
 
-
 class TimeSlot(django_models.Model):
     """Django model for TimeSlot."""
     id = django_models.IntegerField(primary_key=True, verbose_name='ID')
@@ -185,7 +179,6 @@ class TimeSlot(django_models.Model):
         except Competition.DoesNotExist:
             return f"Соревнование #{self.competition_id}"
 
-
 class JuryPanel(django_models.Model):
     """Django model for JuryPanel."""
     id = django_models.IntegerField(primary_key=True, verbose_name='ID')
@@ -212,7 +205,6 @@ class JuryPanel(django_models.Model):
         except Competition.DoesNotExist:
             return f"Соревнование #{self.competition_id}"
 
-
 @admin.register(BotDashboardStat)
 class BotDashboardStatAdmin(admin.ModelAdmin):
     """Admin interface for Dashboard Statistics."""
@@ -229,7 +221,6 @@ class BotDashboardStatAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         """Only superusers can delete statistics."""
         return request.user.is_superuser
-
 
 @admin.register(AdminLog)
 class AdminLogAdmin(admin.ModelAdmin):
@@ -267,9 +258,6 @@ class AdminLogAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         """Only superusers can delete logs."""
         return request.user.is_superuser
-
-
-# ============ Bot Data Admin Classes ============
 
 @admin.register(Competition)
 class CompetitionAdmin(admin.ModelAdmin):
@@ -331,7 +319,6 @@ class CompetitionAdmin(admin.ModelAdmin):
         )
     get_registration_stats.short_description = 'Статистика регистраций'
 
-
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
     """Admin interface for Users."""
@@ -370,11 +357,9 @@ class UserAdmin(admin.ModelAdmin):
         from aiogram import Bot
         from utils.notifications import notify_user, send_email
 
-        # Get users with email addresses
         users = list(queryset.values_list('telegram_id', 'email', 'first_name', 'last_name'))
         count = len(users)
 
-        # Telegram message
         message_tg = """
 🔔 ВАЖНОЕ УВЕДОМЛЕНИЕ
 
@@ -389,7 +374,6 @@ class UserAdmin(admin.ModelAdmin):
 Команда USN
         """.strip()
 
-        # Email HTML message
         message_email = """
 <html>
 <body style="font-family: Arial, sans-serif; color: #333;">
@@ -408,7 +392,6 @@ class UserAdmin(admin.ModelAdmin):
 </html>
         """.strip()
 
-        # Get bot token
         from dotenv import load_dotenv
         load_dotenv('/home/alex/Документы/telegram_bot/.env')
         bot_token = os.getenv('BOT_TOKEN')
@@ -417,7 +400,6 @@ class UserAdmin(admin.ModelAdmin):
             self.message_user(request, f'❌ Ошибка: BOT_TOKEN не найден в .env', level='ERROR')
             return
 
-        # Send notifications
         async def send_all():
             bot = Bot(token=bot_token)
             sent_tg = 0
@@ -426,7 +408,6 @@ class UserAdmin(admin.ModelAdmin):
             for telegram_id, email, first_name, last_name in users:
                 user_name = f"{first_name} {last_name}".strip()
 
-                # Send Telegram
                 try:
                     await notify_user(
                         bot=bot,
@@ -437,7 +418,6 @@ class UserAdmin(admin.ModelAdmin):
                 except Exception as e:
                     print(f"❌ Telegram error for {user_name}: {e}")
 
-                # Send Email
                 if email:
                     try:
                         await send_email(
@@ -474,7 +454,6 @@ class UserAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         """Only superusers can delete users."""
         return request.user.is_superuser
-
 
 @admin.register(Registration)
 class RegistrationAdmin(admin.ModelAdmin):
@@ -589,9 +568,6 @@ class RegistrationAdmin(admin.ModelAdmin):
         self.message_user(request, f'✔️ Подтверждено {updated} заявок.')
     mark_as_confirmed.short_description = 'Отметить как подтвержденные'
 
-
-# ============ Voter Time Slots & Jury Panels Admin ============
-
 @admin.register(TimeSlot)
 class TimeSlotAdmin(admin.ModelAdmin):
     """Admin interface for Time Slots."""
@@ -626,7 +602,6 @@ class TimeSlotAdmin(admin.ModelAdmin):
         else:
             self.message_user(request, f'✅ Временной слот создан: {obj.slot_day} {obj.start_time}-{obj.end_time}')
 
-
 @admin.register(JuryPanel)
 class JuryPanelAdmin(admin.ModelAdmin):
     """Admin interface for Jury Panels."""
@@ -660,9 +635,6 @@ class JuryPanelAdmin(admin.ModelAdmin):
             self.message_user(request, f'✅ Судейская коллегия обновлена: {obj.panel_name}')
         else:
             self.message_user(request, f'✅ Судейская коллегия создана: {obj.panel_name}')
-
-
-# ============ Broadcast System Admin ============
 
 class MessageTemplateAdmin(admin.ModelAdmin):
     """Admin interface for message templates."""
@@ -708,7 +680,6 @@ class MessageTemplateAdmin(admin.ModelAdmin):
         return format_html(html)
     available_variables_display.short_description = 'Доступные переменные'
 
-
 class BroadcastRecipientInline(admin.TabularInline):
     """Inline view of broadcast recipients."""
 
@@ -720,7 +691,6 @@ class BroadcastRecipientInline(admin.TabularInline):
     )
     can_delete = False
     fields = ('user_id', 'telegram_id', 'email_address', 'telegram_status', 'email_status')
-
 
 class BroadcastAdmin(admin.ModelAdmin):
     """Admin interface for broadcasts."""
@@ -833,7 +803,6 @@ class BroadcastAdmin(admin.ModelAdmin):
         self.message_user(request, f'🔄 Сброшено {updated} рассылок.')
     reset_broadcast.short_description = '🔄 Сбросить на черновик'
 
-
 class BroadcastRecipientAdmin(admin.ModelAdmin):
     """Admin interface for broadcast recipients."""
 
@@ -924,7 +893,6 @@ class BroadcastRecipientAdmin(admin.ModelAdmin):
         )
     get_email_status.short_description = 'Email'
 
-
 class BotDataAdmin(admin.AdminSite):
     """Custom admin site for Bot Data Management."""
 
@@ -936,7 +904,6 @@ class BotDataAdmin(admin.AdminSite):
         """Customize admin index page with bot statistics."""
         extra_context = extra_context or {}
 
-        # Get statistics from SQLite database
         try:
             user_count = SQLiteDataHelper.get_user_count()
             competition_count = SQLiteDataHelper.get_competition_count()
@@ -959,22 +926,17 @@ class BotDataAdmin(admin.AdminSite):
 
         return super().index(request, extra_context)
 
-
-# Create custom admin site instance
 bot_admin_site = BotDataAdmin(name='bot_admin')
 
-# Register models with custom admin site
 bot_admin_site.register(BotDashboardStat, BotDashboardStatAdmin)
 bot_admin_site.register(AdminLog, AdminLogAdmin)
 
-# Register bot data models
 bot_admin_site.register(Competition, CompetitionAdmin)
 bot_admin_site.register(User, UserAdmin)
 bot_admin_site.register(Registration, RegistrationAdmin)
 bot_admin_site.register(TimeSlot, TimeSlotAdmin)
 bot_admin_site.register(JuryPanel, JuryPanelAdmin)
 
-# Register broadcast models
 from .models import MessageTemplate, Broadcast, BroadcastRecipient
 bot_admin_site.register(MessageTemplate, MessageTemplateAdmin)
 bot_admin_site.register(Broadcast, BroadcastAdmin)

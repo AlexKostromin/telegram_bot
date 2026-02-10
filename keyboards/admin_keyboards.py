@@ -5,7 +5,6 @@ from typing import List, Any
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-
 def admin_main_menu_keyboard() -> InlineKeyboardMarkup:
     """Main admin menu keyboard."""
     builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
@@ -15,7 +14,6 @@ def admin_main_menu_keyboard() -> InlineKeyboardMarkup:
     builder.button(text="⬅️ В главное меню", callback_data="back_to_menu")
     builder.adjust(1)
     return builder.as_markup()
-
 
 def applications_list_keyboard(applications: List[Any]) -> InlineKeyboardMarkup:
     """Keyboard with list of applications."""
@@ -32,7 +30,6 @@ def applications_list_keyboard(applications: List[Any]) -> InlineKeyboardMarkup:
     builder.adjust(1)
     return builder.as_markup()
 
-
 def application_actions_keyboard(registration_id: int, status: str) -> InlineKeyboardMarkup:
     """Keyboard with actions for application."""
     builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
@@ -47,12 +44,10 @@ def application_actions_keyboard(registration_id: int, status: str) -> InlineKey
     builder.adjust(1)
     return builder.as_markup()
 
-
 def competition_management_keyboard(competition: Any) -> InlineKeyboardMarkup:
     """Keyboard for competition management."""
     builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
 
-    # Role entry toggles
     player_status: str = "✅" if competition.player_entry_open else "❌"
     voter_status: str = "✅" if competition.voter_entry_open else "❌"
     viewer_status: str = "✅" if competition.viewer_entry_open else "❌"
@@ -80,7 +75,6 @@ def competition_management_keyboard(competition: Any) -> InlineKeyboardMarkup:
     builder.adjust(2)
     return builder.as_markup()
 
-
 def time_slot_management_keyboard(competition_id: int) -> InlineKeyboardMarkup:
     """Keyboard for time slot management."""
     builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
@@ -90,7 +84,6 @@ def time_slot_management_keyboard(competition_id: int) -> InlineKeyboardMarkup:
     builder.adjust(1)
     return builder.as_markup()
 
-
 def confirm_action_keyboard(action: str, data: str) -> InlineKeyboardMarkup:
     """Keyboard for action confirmation."""
     builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
@@ -98,7 +91,6 @@ def confirm_action_keyboard(action: str, data: str) -> InlineKeyboardMarkup:
     builder.button(text="❌ Нет", callback_data="admin_menu")
     builder.adjust(2)
     return builder.as_markup()
-
 
 def back_button() -> InlineKeyboardMarkup:
     """Simple back button."""

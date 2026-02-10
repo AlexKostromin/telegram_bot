@@ -6,7 +6,6 @@ from utils import db_manager
 from models import CompetitionModel
 import json
 
-
 async def init_sample_competitions():
     """Добавить примеры соревнований в БД."""
     print("🚀 Инициализирую БД...")
@@ -16,7 +15,6 @@ async def init_sample_competitions():
     async with db_manager.get_session() as session:
         from sqlalchemy import select
 
-        # Проверить, есть ли уже соревнования
         result = await session.execute(select(CompetitionModel))
         existing_competitions = result.scalars().all()
 
@@ -24,7 +22,6 @@ async def init_sample_competitions():
             print("⚠️ Соревнования уже добавлены в БД")
             return
 
-        # Добавить тестовые соревнования
         competitions = [
             CompetitionModel(
                 name="Чемпионат USN 2024",
@@ -73,14 +70,12 @@ async def init_sample_competitions():
         await session.commit()
         print(f"✅ Добавлено {len(competitions)} соревнований в БД")
 
-
 async def main():
     """Главная функция."""
     print("🚀 Инициализация БД с примерами данных...")
     await init_sample_competitions()
     await db_manager.close_db()
     print("✅ Инициализация завершена!")
-
 
 if __name__ == "__main__":
     asyncio.run(main())

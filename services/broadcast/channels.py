@@ -12,17 +12,15 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
 @dataclass
 class DeliveryResult:
     """Result of attempting to deliver a message via a notification channel."""
 
     success: bool
-    status: str                           # 'sent', 'delivered', 'failed', 'blocked'
-    message_id: Optional[str] = None      # ID from the service (Telegram message_id, etc)
-    error: Optional[str] = None           # Error message if delivery failed
-    sent_at: Optional[datetime] = None    # Timestamp when message was sent
-
+    status: str
+    message_id: Optional[str] = None
+    error: Optional[str] = None
+    sent_at: Optional[datetime] = None
 
 class NotificationChannel(ABC):
     """
@@ -90,13 +88,13 @@ class NotificationChannel(ABC):
             True if recipient can receive via this channel, False otherwise
 
         Example:
-            >>> # Telegram requires telegram_id
-            >>> telegram.validate_recipient({'telegram_id': 123})  # True
-            >>> telegram.validate_recipient({'email': 'user@example.com'})  # False
+            >>>
+            >>> telegram.validate_recipient({'telegram_id': 123})
+            >>> telegram.validate_recipient({'email': 'user@example.com'})
 
-            >>> # Email requires email address
-            >>> email.validate_recipient({'email': 'user@example.com'})  # True
-            >>> email.validate_recipient({'telegram_id': 123})  # False
+            >>>
+            >>> email.validate_recipient({'email': 'user@example.com'})
+            >>> email.validate_recipient({'telegram_id': 123})
         """
         pass
 
@@ -123,7 +121,7 @@ class NotificationChannel(ABC):
             True if configured and ready to send, False otherwise
 
         Example:
-            >>> # Email requires SMTP configuration
+            >>>
             >>> if not await email.validate_configuration():
             ...     logger.warning("Email not configured, skipping email channel")
         """

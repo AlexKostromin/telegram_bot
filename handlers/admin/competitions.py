@@ -15,7 +15,6 @@ from states import AdminStates
 
 admin_competitions_router = Router()
 
-
 def competitions_list_keyboard(competitions: list):
     """Create keyboard with competitions list."""
     from aiogram.utils.keyboard import InlineKeyboardBuilder
@@ -29,7 +28,6 @@ def competitions_list_keyboard(competitions: list):
     builder.button(text="⬅️ Назад", callback_data="admin_menu")
     builder.adjust(1)
     return builder.as_markup()
-
 
 @admin_competitions_router.callback_query(F.data == "admin_competitions")
 @admin_only
@@ -52,7 +50,6 @@ async def list_competitions(callback: CallbackQuery, state: FSMContext):
     )
     await state.set_state(AdminStates.managing_competition)
     await callback.answer()
-
 
 @admin_competitions_router.callback_query(F.data.startswith("comp_manage_"))
 @admin_only
@@ -85,7 +82,6 @@ Adviser: {'✅ Открыто' if competition.adviser_entry_open else '❌ За�
     await state.set_state(AdminStates.managing_competition)
     await callback.answer()
 
-
 @admin_competitions_router.callback_query(F.data.startswith("toggle_entry_"))
 @admin_only
 async def toggle_role_entry(callback: CallbackQuery, state: FSMContext):
@@ -94,16 +90,13 @@ async def toggle_role_entry(callback: CallbackQuery, state: FSMContext):
     competition_id = int(parts[2])
     role = parts[3]
 
-    # Get current status and toggle
     competition = await db_manager.get_competition_by_id(competition_id)
     current_status = getattr(competition, f"{role}_entry_open")
     new_status = not current_status
 
-    # Update in DB
     await db_manager.update_role_entry_status(competition_id, role, new_status)
 
     status_text = "✅ Открыто" if new_status else "❌ Закрыто"
     await callback.answer(f"{role.upper()}: {status_text}")
 
-    # Refresh the display
     await manage_competition(callback, state)
