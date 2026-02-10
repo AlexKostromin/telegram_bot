@@ -1,0 +1,54 @@
+{% extends "admin_panel/base.html" %}
+
+{% block title %}Registrations - USN Bot Admin{% endblock %}
+
+{% block content %}
+<h1 class="page-title"><i class="fas fa-file-contract"></i> Registrations</h1>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">All Registrations</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>User</th>
+                        <th>Telegram ID</th>
+                        <th>Competition</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reg in all_registrations %}
+                    <tr>
+                        <td><strong>#{{ reg.id }}</strong></td>
+                        <td>
+                            <div>{{ reg.first_name }} {{ reg.last_name }}</div>
+                            <small class="text-muted">@{{ reg.username|default:"N/A" }}</small>
+                        </td>
+                        <td><code>{{ reg.telegram_id }}</code></td>
+                        <td>{{ reg.competition_name|default:"N/A" }}</td>
+                        <td><span class="badge bg-primary">{{ reg.role|upper }}</span></td>
+                        <td>
+                            <span class="badge badge-{{ reg.status }}">{{ reg.status|upper }}</span>
+                        </td>
+                        <td>
+                            <small>{{ reg.created_at|date:"M d, Y" }}</small>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">No registrations found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

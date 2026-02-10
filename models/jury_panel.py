@@ -12,7 +12,7 @@ class JuryPanelModel(Base):
     __tablename__: str = "jury_panels"
 
     id: int = Column(Integer, primary_key=True)
-    competition_id: int = Column(Integer, nullable=False, index=True)
+    competition_id: int = Column(Integer, ForeignKey('competitions.id', ondelete='CASCADE'), nullable=False, index=True)
     panel_name: str = Column(String(100), nullable=False)
     max_voters: int = Column(Integer, default=5)
     is_active: bool = Column(Boolean, default=True)

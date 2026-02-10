@@ -13,7 +13,7 @@ class TimeSlotModel(Base):
     __tablename__: str = "time_slots"
 
     id: int = Column(Integer, primary_key=True)
-    competition_id: int = Column(Integer, nullable=False, index=True)
+    competition_id: int = Column(Integer, ForeignKey('competitions.id', ondelete='CASCADE'), nullable=False, index=True)
     slot_day: date = Column(Date, nullable=False)
     start_time: time = Column(Time, nullable=False)
     end_time: time = Column(Time, nullable=False)

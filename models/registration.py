@@ -21,9 +21,9 @@ class RegistrationModel(Base):
     __tablename__: str = "registrations"
 
     id: int = Column(Integer, primary_key=True)
-    user_id: int = Column(Integer, nullable=False)  # Foreign key to UserModel
+    user_id: int = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
     telegram_id: int = Column(BigInteger, nullable=False, index=True)
-    competition_id: int = Column(Integer, nullable=False)  # Foreign key to CompetitionModel
+    competition_id: int = Column(Integer, ForeignKey('competitions.id', ondelete='CASCADE'), nullable=False, index=True)
     role: str = Column(String(50), nullable=False)  # player, adviser, viewer, voter
     is_confirmed: bool = Column(Boolean, default=False)
     status: str = Column(String(20), default=RegistrationStatus.PENDING.value)  # pending, approved, rejected

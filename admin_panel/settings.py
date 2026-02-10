@@ -60,13 +60,40 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'admin_panel.wsgi.application'
 
-# Database
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'bot_database.db'),
+# Database Configuration
+import os
+from urllib.parse import urlparse
+
+DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///./bot_database.db')
+
+if DATABASE_URL.startswith('postgresql'):
+    # PostgreSQL: parse connection string
+    django_url = DATABASE_URL.replace('postgresql+asyncpg://', 'postgresql://')
+    parsed = urlparse(django_url)
+
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': parsed.path[1:] if parsed.path else 'usn_bot_db',
+            'USER': parsed.username or 'usn_bot',
+            'PASSWORD': parsed.password or 'secure_password',
+            'HOST': parsed.hostname or 'localhost',
+            'PORT': parsed.port or 5432,
+            'CONN_MAX_AGE': 600,
+        }
     }
-}
+else:
+    # SQLite
+    db_path = DATABASE_URL.replace('sqlite+aiosqlite:///', '').replace('sqlite:///', '').replace('sqlite:', '')
+    if not db_path or db_path == './bot_database.db':
+        db_path = 'bot_database.db'
+
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.path.join(BASE_DIR, db_path if not db_path.startswith('/') else db_path.lstrip('/')),
+        }
+    }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [

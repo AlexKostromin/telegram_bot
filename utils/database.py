@@ -23,15 +23,33 @@ class DatabaseManager:
 
     async def init_db(self) -> None:
         """Инициализировать БД и создать таблицы."""
-        # Create tables using synchronous engine first
-        import sqlalchemy
-        sync_url = DATABASE_URL.replace('sqlite+aiosqlite:', 'sqlite:')
-        sync_engine = sqlalchemy.create_engine(sync_url, echo=False)
-        Base.metadata.create_all(sync_engine)
-        sync_engine.dispose()
+        from config import DB_TYPE, PG_POOL_SIZE, PG_MAX_OVERFLOW
 
-        # Then create async engine
-        self.engine = create_async_engine(DATABASE_URL, echo=False)
+        if DB_TYPE == "postgresql":
+            # PostgreSQL: Connection pooling + async table creation
+            self.engine = create_async_engine(
+                DATABASE_URL,
+                echo=False,
+                pool_size=PG_POOL_SIZE,
+                max_overflow=PG_MAX_OVERFLOW,
+                pool_pre_ping=True,
+            )
+
+            # Create tables async
+            async with self.engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+
+        elif DB_TYPE == "sqlite":
+            # SQLite: Legacy sync approach
+            import sqlalchemy
+            sync_url = DATABASE_URL.replace('sqlite+aiosqlite:', 'sqlite:')
+            sync_engine = sqlalchemy.create_engine(sync_url, echo=False)
+            Base.metadata.create_all(sync_engine)
+            sync_engine.dispose()
+
+            self.engine = create_async_engine(DATABASE_URL, echo=False)
+
+        # Create session maker
         self.async_session_maker = sessionmaker(
             self.engine, class_=AsyncSession, expire_on_commit=False
         )
