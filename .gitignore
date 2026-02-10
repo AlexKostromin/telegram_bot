@@ -108,3 +108,4 @@ test_*.py
 TEST_*.md
 *_results.md
 *_report.md
+.env.example
