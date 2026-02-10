@@ -1,10 +1,9 @@
 # USN Telegram Bot - Docker Compose Configuration
-# Supports both SQLite (development) and PostgreSQL (production)
+# Production-ready PostgreSQL setup
 #
 # Usage:
-#   Development (SQLite):  DATABASE_URL=sqlite+aiosqlite:///./bot_database.db docker compose up bot
-#   Production (PostgreSQL): docker compose up -d
-#   Admin Panel: docker compose -f docker-compose.yml run --rm admin migrate && docker compose -f docker-compose.yml run --rm admin runserver 0.0.0.0:8000
+#   Full stack (bot + PostgreSQL + admin): docker compose --profile all up -d
+#   Or: make postgres
 
 services:
   # ============================================================================
@@ -28,8 +27,8 @@ services:
       - LOGGING_LEVEL=${LOGGING_LEVEL:-INFO}
       - ADMIN_IDS=${ADMIN_IDS}
 
-      # Database Configuration (auto-detect SQLite/PostgreSQL)
-      - DATABASE_URL=${DATABASE_URL:-sqlite+aiosqlite:///./bot_database.db}
+      # Database Configuration (PostgreSQL)
+      - DATABASE_URL=${DATABASE_URL:-postgresql+asyncpg://usn_bot:secure_password@postgres:5432/usn_bot_db}
       - PG_POOL_SIZE=${PG_POOL_SIZE:-10}
       - PG_MAX_OVERFLOW=${PG_MAX_OVERFLOW:-20}
 
@@ -142,7 +141,7 @@ services:
 
     # Environment variables
     environment:
-      - DATABASE_URL=${DATABASE_URL:-sqlite:///./bot_database.db}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://usn_bot:secure_password@postgres:5432/usn_bot_db}
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-django-insecure-dev-key}
       - DEBUG=${DEBUG:-True}
       - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
@@ -192,7 +191,7 @@ services:
 # VOLUMES - Persistent Data Storage
 # ============================================================================
 volumes:
-  # Bot data (SQLite database, application state)
+  # Bot data (application logs)
   bot_data:
     driver: local
 

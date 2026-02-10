@@ -19,7 +19,7 @@
   - Зритель
   - Судья (Voter)
 - ✅ **Управление состоянием** с использованием FSM
-- ✅ **База данных** с SQLAlchemy и SQLite
+- ✅ **База данных** с SQLAlchemy и PostgreSQL
 - ✅ **Django админка** для управления данными
 
 ## 🏗️ Структура проекта
@@ -102,7 +102,7 @@ cp .env.example .env
 Отредактируйте `.env`:
 ```env
 BOT_TOKEN=YOUR_ACTUAL_BOT_TOKEN
-DATABASE_URL=sqlite+aiosqlite:///./bot_database.db
+DATABASE_URL=postgresql+asyncpg://usn_bot:secure_password@postgres:5432/usn_bot_db
 DEBUG=True
 LOGGING_LEVEL=INFO
 ADMIN_IDS=123456789
@@ -142,7 +142,7 @@ python manage.py runserver
 - **aiogram 3.4.1** - асинхронная библиотека для работы с Telegram Bot API
 - **SQLAlchemy 2.0** - ORM для работы с БД
 - **Django 4.2** - веб-фреймворк для админ-панели
-- **SQLite** - легковесная БД по умолчанию
+- **PostgreSQL 16** - production-ready БД
 - **python-dotenv** - загрузка переменных окружения
 
 ### Паттерны и принципы
