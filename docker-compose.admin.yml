@@ -8,7 +8,7 @@ services:
     container_name: usn-telegram-bot
     environment:
       - BOT_TOKEN=${BOT_TOKEN}
-      - DATABASE_URL=sqlite+aiosqlite:///./bot_database.db
+      - DATABASE_URL=postgresql+asyncpg://usn_bot:secure_password@postgres:5432/usn_bot_db
       - DEBUG=${DEBUG:-False}
       - ADMIN_IDS=${ADMIN_IDS}
     volumes:
@@ -25,7 +25,7 @@ services:
     container_name: usn-admin-panel
     environment:
       - DEBUG=${DEBUG:-False}
-      - DATABASE_URL=sqlite:///./bot_database.db
+      - DATABASE_URL=postgresql://usn_bot:secure_password@postgres:5432/usn_bot_db
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-django-insecure-development}
       - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
     volumes:

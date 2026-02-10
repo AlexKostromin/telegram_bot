@@ -13,9 +13,8 @@
 
 ### Особенности
 
-✅ **Единый файл для всех окружений**
-- Поддерживает SQLite (разработка)
-- Поддерживает PostgreSQL (продакшен)
+✅ **Готов к production**
+- PostgreSQL 16 (с connection pooling)
 - Django Admin Panel (опционально)
 
 ✅ **Профили (Profiles)**
@@ -36,14 +35,11 @@ profiles:
 
 ### Использование
 
-#### Development (SQLite по умолчанию):
-```bash
-docker compose up -d bot
-```
-
-#### Production (PostgreSQL):
+#### Development и Production (PostgreSQL):
 ```bash
 docker compose --profile all up -d
+# или
+make postgres
 ```
 
 #### Только админ-панель:
@@ -61,9 +57,11 @@ docker compose --profile db up -d postgres
 ```bash
 # .env файл
 BOT_TOKEN=your_token_here
-DATABASE_URL=sqlite+aiosqlite:///./bot_database.db
 DEBUG=False
 ADMIN_IDS=123456789
+
+# PostgreSQL
+DATABASE_URL=postgresql+asyncpg://usn_bot:secure_password@postgres:5432/usn_bot_db
 
 # PostgreSQL (если используется)
 POSTGRES_USER=usn_bot
@@ -78,7 +76,7 @@ ADMIN_PORT=8000
 ### Volumes и хранение данных
 
 ```yaml
-bot_data           # SQLite БД и состояние бота
+postgres_data      # PostgreSQL БД
 postgres_data      # PostgreSQL данные
 bot_logs          # Логи приложения
 admin_static      # Статические файлы Django
@@ -120,7 +118,7 @@ depends_on:
 📁 Makefile
 ├── Основные команды (help, info, version)
 ├── Docker операции (up, down, build, clean)
-├── Development режимы (dev, sqlite, postgres)
+├── Development режимы (postgres)
 ├── Логирование (logs, logs-tail, stats)
 ├── Административные команды (shell, status, health)
 ├── Admin Panel (admin-up, admin-down)
@@ -139,7 +137,7 @@ make version       # Версии инструментов
 
 #### 🎯 Быстрый старт
 ```bash
-make dev           # Запустить разработку (SQLite)
+make postgres      # Запустить с PostgreSQL
 make up            # Запустить в фоне
 make down          # Остановить все
 make restart       # Перезапустить бот
@@ -169,7 +167,7 @@ make shell         # Bash в контейнере бота
 #### 🔧 PostgreSQL
 ```bash
 make postgres      # Запустить с PostgreSQL
-make migrate       # Миграция SQLite → PostgreSQL
+make db-backup     # Резервная копия PostgreSQL
 make db-init       # Инициализировать PostgreSQL
 make db-shell      # Открыть psql консоль
 make db-backup     # Бэкап базы (backups/usn_bot_YYYYMMDD_HHMMSS.sql)

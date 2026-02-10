@@ -6,7 +6,7 @@ load_dotenv()
 
 BOT_TOKEN: str = os.getenv("BOT_TOKEN", "YOUR_BOT_TOKEN_HERE")
 
-DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./bot_database.db")
+DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql+asyncpg://usn_bot:secure_password@postgres:5432/usn_bot_db")
 
 def get_database_type() -> str:
     if DATABASE_URL.startswith("postgresql"):
