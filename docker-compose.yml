@@ -1,37 +1,60 @@
+# USN Telegram Bot - Docker Compose Configuration
+# Supports both SQLite (development) and PostgreSQL (production)
+#
+# Usage:
+#   Development (SQLite):  DATABASE_URL=sqlite+aiosqlite:///./bot_database.db docker compose up bot
+#   Production (PostgreSQL): docker compose up -d
+#   Admin Panel: docker compose -f docker-compose.yml run --rm admin migrate && docker compose -f docker-compose.yml run --rm admin runserver 0.0.0.0:8000
+
 services:
-  # Main Telegram Bot Service
+  # ============================================================================
+  # TELEGRAM BOT SERVICE (Main Application)
+  # ============================================================================
   bot:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: usn-telegram-bot
     restart: unless-stopped
+    profiles:
+      - bot
+      - all
 
     # Environment variables
     environment:
+      # Bot Configuration
       - BOT_TOKEN=${BOT_TOKEN}
-      - DATABASE_URL=${DATABASE_URL:-postgresql+asyncpg://usn_bot:secure_password@postgres:5432/usn_bot_db}
       - DEBUG=${DEBUG:-False}
       - LOGGING_LEVEL=${LOGGING_LEVEL:-INFO}
       - ADMIN_IDS=${ADMIN_IDS}
-      - PYTHONUNBUFFERED=1
+
+      # Database Configuration (auto-detect SQLite/PostgreSQL)
+      - DATABASE_URL=${DATABASE_URL:-sqlite+aiosqlite:///./bot_database.db}
       - PG_POOL_SIZE=${PG_POOL_SIZE:-10}
       - PG_MAX_OVERFLOW=${PG_MAX_OVERFLOW:-20}
 
+      # PostgreSQL Credentials (if using PostgreSQL)
+      - POSTGRES_USER=${POSTGRES_USER:-usn_bot}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-secure_password}
+      - POSTGRES_DB=${POSTGRES_DB:-usn_bot_db}
+
+      # Python Configuration
+      - PYTHONUNBUFFERED=1
+
     # Volume mounts
     volumes:
-      # Persistent database storage
+      # Persistent data storage
       - bot_data:/data
-      # Optional: logs directory
+      # Logs directory
       - bot_logs:/app/logs
-      # Optional: allow hot reload during development (comment out for production)
+      # Source code (for development with hot reload - commented out for production)
       # - .:/app
 
-    # Network
+    # Network configuration
     networks:
       - bot_network
 
-    # Resource limits
+    # Resource limits (can be adjusted based on load)
     deploy:
       resources:
         limits:
@@ -41,12 +64,61 @@ services:
           cpus: '0.5'
           memory: 256M
 
-    # Wait for network and database to be ready
+    # Wait for dependencies
     depends_on:
-      postgres:
-        condition: service_healthy
       network_check:
         condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================================================
+  # POSTGRESQL DATABASE SERVICE (Optional - for production)
+  # ============================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: usn-postgres
+    restart: unless-stopped
+    profiles:
+      - db
+      - all
+      - postgres
+
+    # PostgreSQL Configuration
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-usn_bot}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-secure_password}
+      - POSTGRES_DB=${POSTGRES_DB:-usn_bot_db}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF8
+
+    # Persistent data storage
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backups:/backups
+      # Optional: initialization scripts
+      # - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+    # Network configuration
+    networks:
+      - bot_network
+
+    # Ports (only exposed for local development)
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+
+    # Health check to ensure database is ready
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-usn_bot} -d ${POSTGRES_DB:-usn_bot_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
     # Logging
     logging:
@@ -55,56 +127,95 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # PostgreSQL Database
-  postgres:
-    image: postgres:16-alpine
-    container_name: usn-postgres
+  # ============================================================================
+  # DJANGO ADMIN PANEL SERVICE (Optional)
+  # ============================================================================
+  admin:
+    build:
+      context: .
+      dockerfile: Dockerfile.admin
+    container_name: usn-admin-panel
     restart: unless-stopped
+    profiles:
+      - admin
+      - all
 
+    # Environment variables
     environment:
-      - POSTGRES_USER=${POSTGRES_USER:-usn_bot}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-secure_password}
-      - POSTGRES_DB=${POSTGRES_DB:-usn_bot_db}
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///./bot_database.db}
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-django-insecure-dev-key}
+      - DEBUG=${DEBUG:-True}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
+      - PYTHONUNBUFFERED=1
 
+    # Volume mounts
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./backups:/backups
+      - bot_data:/data
+      - ./admin_panel:/app/admin_panel
+      - admin_static:/app/static
+      - admin_media:/app/media
 
+    # Network configuration
     networks:
       - bot_network
 
+    # Ports
     ports:
-      - "5432:5432"
+      - "${ADMIN_PORT:-8000}:8000"
 
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-usn_bot}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    # Wait for database
+    depends_on:
+      - postgres
 
-  # Simple network check service (to ensure network is ready)
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================================================
+  # NETWORK CHECK SERVICE (Utility)
+  # ============================================================================
   network_check:
     image: busybox:latest
     container_name: network-check
-    command: echo "Network is ready"
+    command: sh -c "echo 'Network is ready' && sleep 1"
     networks:
       - bot_network
     restart: "no"
+    profiles:
+      - bot
+      - all
 
+# ============================================================================
+# VOLUMES - Persistent Data Storage
+# ============================================================================
 volumes:
-  # Database and data persistence
+  # Bot data (SQLite database, application state)
   bot_data:
     driver: local
 
-  # PostgreSQL data persistence
+  # PostgreSQL data (only used if postgres service is active)
   postgres_data:
     driver: local
 
-  # Logs persistence
+  # Bot logs (application logs)
   bot_logs:
     driver: local
 
+  # Admin panel static files
+  admin_static:
+    driver: local
+
+  # Admin panel media files
+  admin_media:
+    driver: local
+
+# ============================================================================
+# NETWORKS - Service Communication
+# ============================================================================
 networks:
-  # Custom network for the services
+  # Custom bridge network for service communication
   bot_network:
     driver: bridge
