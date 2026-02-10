@@ -1,6 +1,3 @@
-"""
-Model for voter time slot management.
-"""
 from typing import Optional
 from datetime import datetime, date, time
 from sqlalchemy import Column, Integer, Date, Time, Boolean, DateTime, ForeignKey
@@ -23,3 +20,4 @@ class TimeSlotModel(Base):
     def __str__(self) -> str:
         """String representation of time slot."""
         return f"{self.slot_day} {self.start_time}-{self.end_time}"
+

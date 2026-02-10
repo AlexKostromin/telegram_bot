@@ -1,6 +1,3 @@
-"""
-Django app configuration for bot data management.
-"""
 import os
 import sys
 from pathlib import Path
@@ -25,3 +22,4 @@ class SQLAlchemyModelProxy:
         self.models[name] = sqla_model
 
 BotDataApp = BotDataAppConfig
+

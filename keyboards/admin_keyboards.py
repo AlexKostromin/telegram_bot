@@ -1,6 +1,3 @@
-"""
-Admin panel keyboards.
-"""
 from typing import List, Any
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
@@ -98,3 +95,4 @@ def back_button() -> InlineKeyboardMarkup:
     builder.button(text="⬅️ Назад", callback_data="admin_menu")
     builder.adjust(1)
     return builder.as_markup()
+

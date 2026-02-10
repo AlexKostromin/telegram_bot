@@ -1,6 +1,3 @@
-"""
-Notification system for registration updates.
-"""
 from typing import Optional
 import logging
 from aiogram import Bot
@@ -146,3 +143,4 @@ async def send_email(
     except Exception as e:
         logger.error(f"❌ Ошибка отправки email на {email_address}: {e}")
         print(f"❌ Error sending email to {email_address}: {e}")
+

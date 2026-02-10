@@ -1,6 +1,3 @@
-"""
-Voter time slot and jury panel selection handlers.
-"""
 from aiogram import Router, F
 from aiogram.types import CallbackQuery
 from aiogram.fsm.context import FSMContext
@@ -156,3 +153,4 @@ async def jury_panel_selection_handler(callback: CallbackQuery, state: FSMContex
             )
 
         await callback.answer()
+

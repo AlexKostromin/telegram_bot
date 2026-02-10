@@ -1,6 +1,3 @@
-"""
-Model for jury panel management.
-"""
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
 from models.user import Base
@@ -20,3 +17,4 @@ class JuryPanelModel(Base):
     def __str__(self) -> str:
         """String representation of jury panel."""
         return f"{self.panel_name} (max {self.max_voters})"
+

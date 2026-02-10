@@ -1,6 +1,3 @@
-"""
-Модуль моделей данных.
-"""
 from .user import UserModel, Base
 from .competition import CompetitionModel
 from .registration import RegistrationModel, RegistrationStatus
@@ -26,3 +23,4 @@ __all__ = [
     "DeliveryStatus",
     "Base",
 ]
+

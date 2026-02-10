@@ -1,6 +1,3 @@
-"""
-Состояния FSM для процесса регистрации пользователя.
-"""
 from aiogram.fsm.state import State, StatesGroup
 
 class RegistrationStates(StatesGroup):
@@ -35,3 +32,4 @@ class RegistrationStates(StatesGroup):
     waiting_for_final_confirmation = State()
 
     registration_complete = State()
+

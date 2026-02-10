@@ -1,6 +1,3 @@
-"""
-Views for Bot Data Management.
-"""
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.views.generic import TemplateView
@@ -148,3 +145,4 @@ def registration_detail(request, registration_id):
             return JsonResponse({'success': False, 'error': 'Registration not found'}, status=404)
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
+

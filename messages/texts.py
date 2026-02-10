@@ -1,7 +1,3 @@
-"""
-Все текстовые сообщения для Telegram бота USN.
-"""
-
 class BotMessages:
     """Класс со всеми сообщениями бота."""
 
@@ -120,3 +116,4 @@ class BotMessages:
             "presentation": "Как вас представить",
         }
         return field_names.get(field_key, field_key)
+

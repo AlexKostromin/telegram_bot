@@ -1,6 +1,3 @@
-"""
-Admin panel main menu handler.
-"""
 from typing import List, Dict, Any
 from aiogram import Router
 from aiogram.filters import Command
@@ -33,3 +30,4 @@ async def admin_command_handler(message: Message, state: FSMContext) -> None:
 
     await message.answer(text, reply_markup=admin_main_menu_keyboard())
     await state.set_state(AdminStates.admin_main_menu)
+

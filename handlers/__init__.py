@@ -1,6 +1,3 @@
-"""
-Модуль обработчиков бота.
-"""
 from .start import start_router
 from .menu import menu_router
 from .contact import contact_router
@@ -32,3 +29,4 @@ __all__ = [
     "admin_applications_router",
     "admin_competitions_router",
 ]
+

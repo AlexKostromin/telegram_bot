@@ -1,9 +1,3 @@
-"""
-Abstract notification channels for broadcast system.
-
-This module defines the base interface for all notification channels (Telegram, Email, SMS, Push, etc).
-Follows the Strategy pattern and SOLID principles for easy extensibility.
-"""
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Dict, Any, Optional
@@ -150,3 +144,4 @@ class NotificationChannel(ABC):
     def __repr__(self) -> str:
         """Detailed representation."""
         return f"<{self.get_channel_name()}Channel>"
+

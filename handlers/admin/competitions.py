@@ -1,6 +1,3 @@
-"""
-Admin competition management handlers.
-"""
 from aiogram import Router, F
 from aiogram.types import CallbackQuery
 from aiogram.fsm.context import FSMContext
@@ -100,3 +97,4 @@ async def toggle_role_entry(callback: CallbackQuery, state: FSMContext):
     await callback.answer(f"{role.upper()}: {status_text}")
 
     await manage_competition(callback, state)
+

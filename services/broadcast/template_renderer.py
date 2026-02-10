@@ -1,9 +1,3 @@
-"""
-Template renderer for broadcast messages.
-
-Uses Jinja2 for flexible variable substitution in message templates.
-Supports conditional logic, filters, and default values.
-"""
 from typing import Dict, Any, List, Optional, Set
 import logging
 import re
@@ -262,3 +256,4 @@ class TemplateRenderer:
             'date': datetime.now().strftime('%Y-%m-%d'),
             'time': datetime.now().strftime('%H:%M:%S'),
         }
+

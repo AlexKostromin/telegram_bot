@@ -1,9 +1,3 @@
-"""
-Broadcast orchestrator - main coordinator for broadcast system.
-
-Uses Facade pattern to simplify the complex broadcast workflow.
-Coordinates all services: channels, template rendering, recipient filtering, database operations.
-"""
 from typing import Dict, Any, List, Optional, Tuple
 import logging
 import asyncio
@@ -461,3 +455,4 @@ class BroadcastOrchestrator:
 
         except Exception as e:
             logger.error(f"❌ Failed to update recipient status: {e}")
+

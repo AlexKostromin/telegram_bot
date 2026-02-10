@@ -1,7 +1,3 @@
-"""
-Django models for Bot Data Management.
-These models use the SQLite database created by the Telegram bot.
-"""
 import os
 import sys
 from django.db import models
@@ -291,3 +287,4 @@ class BroadcastRecipient(models.Model):
     def is_sent(self):
         """Check if sent to at least one channel."""
         return self.telegram_status == 'sent' or self.email_status == 'sent'
+

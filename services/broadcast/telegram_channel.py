@@ -1,9 +1,3 @@
-"""
-Telegram notification channel for broadcast system.
-
-Uses aiogram Bot API to send messages to Telegram users.
-Includes rate limiting, error handling, and delivery status tracking.
-"""
 from typing import Dict, Any, Optional
 from datetime import datetime
 import logging
@@ -234,3 +228,4 @@ class TelegramChannel(NotificationChannel):
         except Exception:
             pass
         return f"<TelegramChannel bot={username}>"
+

@@ -1,6 +1,3 @@
-"""
-Обработчик финального подтверждения и регистрации.
-"""
 from aiogram import Router, F
 from aiogram.types import CallbackQuery
 from aiogram.fsm.context import FSMContext
@@ -184,3 +181,4 @@ async def registration_complete_yes(query: CallbackQuery, state: FSMContext) -> 
 
     await state.clear()
     await query.answer()
+

@@ -1,6 +1,3 @@
-"""
-Admin authorization utilities.
-"""
 from functools import wraps
 from typing import Callable, Union, Any
 from config import ADMIN_IDS
@@ -24,3 +21,4 @@ def admin_only(handler: Callable[..., Any]) -> Callable[..., Any]:
             return
         return await handler(event, *args, **kwargs)
     return wrapper
+

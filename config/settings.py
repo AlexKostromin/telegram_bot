@@ -1,6 +1,3 @@
-"""
-Конфигурация приложения Telegram бота USN.
-"""
 import os
 from dotenv import load_dotenv
 
@@ -33,3 +30,4 @@ ADMIN_IDS = list(map(int, os.getenv("ADMIN_IDS", "").split(","))) if os.getenv("
 
 MESSAGE_CONTACT_EMAIL = "contact@usn.example.com"
 MESSAGE_CONTACT_PHONE = "+7 (XXX) XXX-XX-XX"
+

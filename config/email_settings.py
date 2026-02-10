@@ -1,12 +1,3 @@
-"""
-Email configuration for broadcast system and notifications.
-
-Supports multiple SMTP providers:
-- Mailtrap (for testing)
-- Gmail (requires app password)
-- Yandex Mail
-- Custom SMTP servers
-"""
 import os
 from typing import Optional
 from dotenv import load_dotenv
@@ -95,3 +86,4 @@ Email Configuration Summary:
 
 if __name__ != "__main__":
     SMTPConfig.validate()
+

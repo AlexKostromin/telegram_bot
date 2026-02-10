@@ -1,6 +1,3 @@
-"""
-Обработчик редактирования данных пользователя.
-"""
 from typing import Optional, List, Dict, Any
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
@@ -185,3 +182,4 @@ async def finish_editing(query: CallbackQuery, state: FSMContext) -> None:
         reply_markup=InlineKeyboards.yes_no_keyboard(),
     )
     await query.answer()
+

@@ -1,6 +1,3 @@
-"""
-Admin application management handlers.
-"""
 from aiogram import Router, F
 from aiogram.types import CallbackQuery
 from aiogram.fsm.context import FSMContext
@@ -162,3 +159,4 @@ async def revoke_application_execute(callback: CallbackQuery, state: FSMContext)
     await callback.message.edit_text("⚠️ Регистрация отозвана")
     await state.clear()
     await callback.answer()
+

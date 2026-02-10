@@ -1,6 +1,3 @@
-"""
-Модели для системы массовых рассылок.
-"""
 from typing import Optional, Dict, Any
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, JSON, ForeignKey, Enum
 from sqlalchemy.orm import relationship
@@ -175,3 +172,4 @@ class BroadcastRecipient(Base):
             self.telegram_status == DeliveryStatus.failed or
             self.email_status == DeliveryStatus.failed
         )
+

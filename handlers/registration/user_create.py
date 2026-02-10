@@ -1,6 +1,3 @@
-"""
-Обработчик создания нового пользователя при регистрации.
-"""
 from typing import Optional, Dict, Any
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
@@ -401,3 +398,4 @@ async def _create_user_from_state_data(telegram_user: Any, state_data: Dict[str,
         presentation=state_data.get("presentation"),
     )
     return user
+

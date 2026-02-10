@@ -1,6 +1,3 @@
-"""
-Обработчик выбора соревнования при регистрации.
-"""
 from typing import Optional, Dict, Any, List
 import json
 from aiogram import Router, F
@@ -140,3 +137,4 @@ async def competition_select_callback(query: CallbackQuery, state: FSMContext) -
         reply_markup=InlineKeyboards.roles_keyboard(available_roles),
     )
     await query.answer()
+

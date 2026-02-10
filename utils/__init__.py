@@ -1,6 +1,3 @@
-"""
-Модуль утилит.
-"""
 from .database import DatabaseManager, db_manager
 from .validators import Validators
 from .helpers import BotHelpers
@@ -19,3 +16,4 @@ __all__ = [
     "CompetitionSerializer",
     "RegistrationSerializer",
 ]
+

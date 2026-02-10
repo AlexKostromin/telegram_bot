@@ -1,6 +1,3 @@
-"""
-Модель регистрации пользователя на соревнование.
-"""
 from typing import Optional
 from sqlalchemy import Column, Integer, String, BigInteger, DateTime, ForeignKey, Boolean
 from datetime import datetime
@@ -33,3 +30,4 @@ class RegistrationModel(Base):
     def __str__(self) -> str:
         """Строковое представление регистрации."""
         return f"User {self.telegram_id} - Competition {self.competition_id} ({self.role})"
+

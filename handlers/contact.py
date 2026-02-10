@@ -1,6 +1,3 @@
-"""
-Обработчик для "Связаться с командой USN".
-"""
 from typing import Optional
 import logging
 from aiogram import Router, F, Bot
@@ -102,3 +99,4 @@ async def contact_message_handler(message: Message, state: FSMContext, bot: Bot)
     logger.info(f"✅ Confirmation sent to user {user_id}")
 
     await state.clear()
+

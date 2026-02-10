@@ -1,6 +1,3 @@
-"""
-Сериализаторы для преобразования моделей БД в словари для различных контекстов.
-"""
 from datetime import date, datetime
 from typing import Optional, List, Any, Dict, Union
 from models import UserModel, CompetitionModel, RegistrationModel
@@ -158,3 +155,4 @@ class RegistrationSerializer(BaseSerializer):
             "confirmed_at": BaseSerializer.serialize_datetime(registration.confirmed_at),
             "confirmed_by": registration.confirmed_by,
         }
+

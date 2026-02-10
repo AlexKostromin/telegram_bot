@@ -1,7 +1,3 @@
-"""
-Configuration module for USN Telegram Bot.
-Loads configuration from environment variables.
-"""
 import os
 from typing import List
 from dotenv import load_dotenv
@@ -31,3 +27,4 @@ LOGGING_LEVEL: str = os.getenv("LOGGING_LEVEL", "INFO")
 
 ADMIN_IDS_STR: str = os.getenv("ADMIN_IDS", "")
 ADMIN_IDS: List[int] = [int(id.strip()) for id in ADMIN_IDS_STR.split(",") if id.strip()]
+

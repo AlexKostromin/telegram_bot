@@ -1,6 +1,3 @@
-"""
-Django admin configuration for Bot Data Management.
-"""
 from django.contrib import admin
 from django.utils.html import format_html
 from django.urls import reverse
@@ -941,3 +938,4 @@ from .models import MessageTemplate, Broadcast, BroadcastRecipient
 bot_admin_site.register(MessageTemplate, MessageTemplateAdmin)
 bot_admin_site.register(Broadcast, BroadcastAdmin)
 bot_admin_site.register(BroadcastRecipient, BroadcastRecipientAdmin)
+

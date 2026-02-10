@@ -1,6 +1,3 @@
-"""
-Model for voter assignment to jury panels.
-"""
 from datetime import datetime
 from sqlalchemy import Column, Integer, DateTime, ForeignKey
 from models.user import Base
@@ -18,3 +15,4 @@ class VoterJuryPanelModel(Base):
     def __str__(self) -> str:
         """String representation."""
         return f"Registration {self.registration_id} -> Panel {self.jury_panel_id}"
+

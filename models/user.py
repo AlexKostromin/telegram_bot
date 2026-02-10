@@ -1,6 +1,3 @@
-"""
-Модель пользователя для Telegram бота.
-"""
 from typing import Optional
 from sqlalchemy import Column, Integer, String, BigInteger, DateTime, Boolean, Text, Date
 from sqlalchemy.ext.declarative import declarative_base
@@ -41,3 +38,4 @@ class UserModel(Base):
     def get_display_name(self) -> str:
         """Получить отображаемое имя пользователя."""
         return f"{self.first_name} {self.last_name}"
+

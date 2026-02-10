@@ -1,6 +1,3 @@
-"""
-Утилиты для работы с базой данных.
-"""
 from typing import Optional, List, Dict, Any
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, AsyncEngine
 from sqlalchemy.orm import sessionmaker, sessionmaker
@@ -499,3 +496,4 @@ class DatabaseManager:
             return result.scalars().all()
 
 db_manager = DatabaseManager()
+

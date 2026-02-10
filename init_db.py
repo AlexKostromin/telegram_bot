@@ -1,6 +1,3 @@
-"""
-Скрипт для инициализации БД с тестовыми данными.
-"""
 import asyncio
 from utils import db_manager
 from models import CompetitionModel
@@ -79,3 +76,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+

@@ -1,6 +1,3 @@
-"""
-Обработчик команды /start.
-"""
 from aiogram import Router, F
 from aiogram.types import Message
 from aiogram.filters import Command
@@ -50,3 +47,4 @@ async def help_handler(message: Message) -> None:
         "• При возникновении вопросов свяжитесь с командой USN\n"
     )
     await message.answer(help_text)
+

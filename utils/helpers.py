@@ -1,6 +1,3 @@
-"""
-Вспомогательные функции для бота.
-"""
 from aiogram.types import User
 from typing import Optional, List, Dict, Any
 from datetime import datetime
@@ -166,3 +163,4 @@ class BotHelpers:
             text += f"\n📝 О себе: {registration_data.get('bio')}"
 
         return text
+

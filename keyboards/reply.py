@@ -1,6 +1,3 @@
-"""
-Reply-клавиатуры для Telegram бота.
-"""
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 
@@ -41,3 +38,4 @@ class ReplyKeyboards:
         builder.button(text="❌ Отмена")
         builder.adjust(1)
         return builder.as_markup(resize_keyboard=True)
+

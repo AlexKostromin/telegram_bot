@@ -1,6 +1,3 @@
-"""
-URL configuration for Bot Data Management App.
-"""
 from django.urls import path
 from . import views
 
@@ -15,3 +12,4 @@ urlpatterns = [
     path('api/stats/', views.bot_stats_api, name='stats_api'),
     path('api/registration/<int:registration_id>/', views.registration_detail, name='registration_detail'),
 ]
+

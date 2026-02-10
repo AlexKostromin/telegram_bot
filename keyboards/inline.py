@@ -1,6 +1,3 @@
-"""
-Инлайн-клавиатуры для Telegram бота.
-"""
 from typing import List, Dict, Any, Optional
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
@@ -162,3 +159,4 @@ class InlineKeyboards:
 
         builder.adjust(1)
         return builder.as_markup()
+

@@ -1,6 +1,3 @@
-"""
-Модуль обработчиков регистрации.
-"""
 from .competition_select import competition_select_router
 from .role_select import role_select_router
 from .user_create import user_create_router
@@ -16,3 +13,4 @@ __all__ = [
     "voter_slots_router",
     "confirmation_router",
 ]
+

@@ -1,6 +1,3 @@
-"""
-Обработчик выбора роли при регистрации.
-"""
 from typing import Optional, Dict, Any, Union
 from aiogram import Router, F
 from aiogram.types import CallbackQuery
@@ -75,3 +72,4 @@ async def role_select_callback(query: CallbackQuery, state: FSMContext) -> None:
         )
 
     await query.answer()
+

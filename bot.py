@@ -1,6 +1,3 @@
-"""
-Инициализация Telegram бота.
-"""
 from typing import List
 from aiogram import Dispatcher, Bot, F
 from aiogram.fsm.storage.memory import MemoryStorage
@@ -81,3 +78,4 @@ class USNBot:
     def get_bot(self) -> Bot:
         """Получить объект бота."""
         return self.bot
+

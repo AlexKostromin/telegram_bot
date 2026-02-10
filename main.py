@@ -1,6 +1,3 @@
-"""
-Точка входа для запуска Telegram бота USN.
-"""
 import asyncio
 import logging
 from typing import Optional
@@ -114,3 +111,4 @@ async def main() -> None:
 
 if __name__ == "__main__":
     asyncio.run(main())
+

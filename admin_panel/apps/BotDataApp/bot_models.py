@@ -1,7 +1,3 @@
-"""
-Django models for Bot Data Management.
-These models directly interact with the SQLite database created by the Telegram bot.
-"""
 import os
 import sys
 from django.db import models, connection
@@ -216,3 +212,4 @@ class Registration(models.Model):
             return Competition.objects.get(id=self.competition_id)
         except Competition.DoesNotExist:
             return None
+

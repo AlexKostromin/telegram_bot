@@ -1,9 +1,3 @@
-"""
-Recipient filter for selecting target users for broadcasts.
-
-Uses SQLAlchemy to query database for users matching filter criteria.
-Supports complex filtering by competition, role, status, location, etc.
-"""
 from typing import Dict, Any, List, Optional
 import logging
 from sqlalchemy import select, and_, or_
@@ -327,3 +321,4 @@ class RecipientFilter:
             ...     print(f"{recipient['first_name']} ({recipient['email']})")
         """
         return await self.get_recipients(limit=limit)
+

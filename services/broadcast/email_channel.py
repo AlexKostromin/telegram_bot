@@ -1,9 +1,3 @@
-"""
-Email notification channel for broadcast system.
-
-Uses smtplib for async SMTP email delivery.
-Supports both plain text and HTML emails with proper MIME formatting.
-"""
 from typing import Dict, Any, Optional
 from datetime import datetime
 import logging
@@ -311,3 +305,4 @@ class EmailChannel(NotificationChannel):
         """Detailed representation."""
         server = f"{self.config.SMTP_HOST}:{self.config.SMTP_PORT}" if self.config.is_configured() else "unconfigured"
         return f"<EmailChannel smtp={server}>"
+

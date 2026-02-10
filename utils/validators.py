@@ -1,6 +1,3 @@
-"""
-Валидаторы для проверки данных пользователя.
-"""
 import re
 from typing import Tuple, Union
 from datetime import datetime, date
@@ -168,3 +165,4 @@ class Validators:
             return False, f"❌ Биография не должна превышать {max_length} символов"
 
         return True, bio
+

@@ -1,6 +1,3 @@
-"""
-Модель соревнования для Telegram бота.
-"""
 from typing import Dict, Optional, List
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, JSON
 from datetime import datetime
@@ -41,3 +38,4 @@ class CompetitionModel(Base):
             "adviser": self.adviser_entry_open,
         }
         return role_flags.get(role, False)
+
