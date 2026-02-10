@@ -18,21 +18,11 @@ async def migrate(session: AsyncSession):
 
     This migration is safe on fresh installs (creates tables if not exist).
     """
-    from config import DB_TYPE
-
-    # Set syntax based on DB type
-    if DB_TYPE == "postgresql":
-        pk = "SERIAL PRIMARY KEY"
-        bool_true = "TRUE"
-        bool_false = "FALSE"
-        ts = "TIMESTAMP"
-        now = "CURRENT_TIMESTAMP"
-    else:  # SQLite
-        pk = "INTEGER PRIMARY KEY AUTOINCREMENT"
-        bool_true = "1"
-        bool_false = "0"
-        ts = "DATETIME"
-        now = "CURRENT_TIMESTAMP"
+    pk = "SERIAL PRIMARY KEY"
+    bool_true = "TRUE"
+    bool_false = "FALSE"
+    ts = "TIMESTAMP"
+    now = "CURRENT_TIMESTAMP"
 
     try:
         # Create message_templates

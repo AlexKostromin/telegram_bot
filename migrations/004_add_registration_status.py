@@ -16,25 +16,17 @@ async def migrate(session: AsyncSession):
 
     Safe on fresh installs - columns are already created via models.
     """
-    from config import DB_TYPE
-
     try:
-        # Get existing columns (database-agnostic)
-        if DB_TYPE == "postgresql":
-            result = await session.execute(text("""
-                SELECT column_name
-                FROM information_schema.columns
-                WHERE table_name = 'registrations'
-            """))
-            columns = {row[0] for row in result.fetchall()}
-        else:  # SQLite
-            result = await session.execute(text("PRAGMA table_info(registrations)"))
-            columns = {row[1] for row in result.fetchall()}
+        result = await session.execute(text("""
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_name = 'registrations'
+        """))
+        columns = {row[0] for row in result.fetchall()}
 
-        # Columns to add
         columns_to_add = [
             ("status", "VARCHAR(20) DEFAULT 'pending'"),
-            ("confirmed_at", "TIMESTAMP NULL" if DB_TYPE == "postgresql" else "DATETIME NULL"),
+            ("confirmed_at", "TIMESTAMP NULL"),
             ("confirmed_by", "BIGINT NULL"),
         ]
 

@@ -8,16 +8,6 @@ BOT_TOKEN: str = os.getenv("BOT_TOKEN", "YOUR_BOT_TOKEN_HERE")
 
 DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql+asyncpg://usn_bot:secure_password@postgres:5432/usn_bot_db")
 
-def get_database_type() -> str:
-    if DATABASE_URL.startswith("postgresql"):
-        return "postgresql"
-    elif DATABASE_URL.startswith("sqlite"):
-        return "sqlite"
-    else:
-        raise ValueError(f"Unsupported database URL: {DATABASE_URL}")
-
-DB_TYPE: str = get_database_type()
-
 PG_POOL_SIZE: int = int(os.getenv("PG_POOL_SIZE", "10"))
 PG_MAX_OVERFLOW: int = int(os.getenv("PG_MAX_OVERFLOW", "20"))
 

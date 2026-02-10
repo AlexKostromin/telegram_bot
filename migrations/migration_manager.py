@@ -14,26 +14,14 @@ class MigrationHistory:
 
     @staticmethod
     async def create_table(session: AsyncSession):
-        """Create migration_history table (database-agnostic)."""
-        from config import DB_TYPE
-
-        if DB_TYPE == "postgresql":
-            await session.execute(text("""
-                CREATE TABLE IF NOT EXISTS migration_history (
-                    id SERIAL PRIMARY KEY,
-                    version VARCHAR(50) UNIQUE NOT NULL,
-                    applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """))
-        else:  # SQLite
-            await session.execute(text("""
-                CREATE TABLE IF NOT EXISTS migration_history (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    version VARCHAR(50) UNIQUE NOT NULL,
-                    applied_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                )
-            """))
-
+        """Create migration_history table for PostgreSQL."""
+        await session.execute(text("""
+            CREATE TABLE IF NOT EXISTS migration_history (
+                id SERIAL PRIMARY KEY,
+                version VARCHAR(50) UNIQUE NOT NULL,
+                applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
         await session.commit()
 
 

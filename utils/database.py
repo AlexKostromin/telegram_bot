@@ -16,28 +16,18 @@ class DatabaseManager:
         self.async_session_maker: Optional[sessionmaker] = None
 
     async def init_db(self) -> None:
-        from config import DB_TYPE, PG_POOL_SIZE, PG_MAX_OVERFLOW
+        from config import PG_POOL_SIZE, PG_MAX_OVERFLOW
 
-        if DB_TYPE == "postgresql":
-            self.engine = create_async_engine(
-                DATABASE_URL,
-                echo=False,
-                pool_size=PG_POOL_SIZE,
-                max_overflow=PG_MAX_OVERFLOW,
-                pool_pre_ping=True,
-            )
+        self.engine = create_async_engine(
+            DATABASE_URL,
+            echo=False,
+            pool_size=PG_POOL_SIZE,
+            max_overflow=PG_MAX_OVERFLOW,
+            pool_pre_ping=True,
+        )
 
-            async with self.engine.begin() as conn:
-                await conn.run_sync(Base.metadata.create_all)
-
-        elif DB_TYPE == "sqlite":
-            import sqlalchemy
-            sync_url = DATABASE_URL.replace('sqlite+aiosqlite:', 'sqlite:')
-            sync_engine = sqlalchemy.create_engine(sync_url, echo=False)
-            Base.metadata.create_all(sync_engine)
-            sync_engine.dispose()
-
-            self.engine = create_async_engine(DATABASE_URL, echo=False)
+        async with self.engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
 
         self.async_session_maker = sessionmaker(
             self.engine, class_=AsyncSession, expire_on_commit=False

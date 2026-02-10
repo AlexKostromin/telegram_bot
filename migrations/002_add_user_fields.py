@@ -12,22 +12,14 @@ async def migrate(session: AsyncSession):
     - date_of_birth: DATE NULL
     - channel_name: VARCHAR(255) NULL
     """
-    from config import DB_TYPE
-
     try:
-        # Get existing columns (database-agnostic)
-        if DB_TYPE == "postgresql":
-            result = await session.execute(text("""
-                SELECT column_name
-                FROM information_schema.columns
-                WHERE table_name = 'users'
-            """))
-            columns = {row[0] for row in result.fetchall()}
-        else:  # SQLite
-            result = await session.execute(text("PRAGMA table_info(users)"))
-            columns = {row[1] for row in result.fetchall()}
+        result = await session.execute(text("""
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_name = 'users'
+        """))
+        columns = {row[0] for row in result.fetchall()}
 
-        # Columns to add
         columns_to_add = [
             ("bio", "TEXT NULL"),
             ("date_of_birth", "DATE NULL"),
