@@ -9,7 +9,6 @@ import json
 from .models import SQLiteDataHelper, AdminLog
 
 class DashboardView(LoginRequiredMixin, TemplateView):
-    """Dashboard view with bot statistics."""
 
     template_name = 'admin_panel/dashboard.html'
 
@@ -32,7 +31,6 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         return context
 
 class RegistrationsView(LoginRequiredMixin, TemplateView):
-    """View for managing registrations."""
 
     template_name = 'admin_panel/registrations.html'
 
@@ -41,15 +39,6 @@ class RegistrationsView(LoginRequiredMixin, TemplateView):
 
         try:
             context['all_registrations'] = SQLiteDataHelper.execute_raw_query(
-                """
-                SELECT r.id, r.user_id, r.competition_id, r.role, r.status,
-                       r.created_at, u.first_name, u.last_name, u.telegram_id,
-                       c.name as competition_name
-                FROM registrations r
-                LEFT JOIN users u ON r.user_id = u.id
-                LEFT JOIN competitions c ON r.competition_id = c.id
-                ORDER BY r.id DESC
-                """
             )
             context['statuses'] = ['pending', 'approved', 'rejected']
         except Exception as e:
@@ -58,7 +47,6 @@ class RegistrationsView(LoginRequiredMixin, TemplateView):
         return context
 
 class UsersView(LoginRequiredMixin, TemplateView):
-    """View for managing users."""
 
     template_name = 'admin_panel/users.html'
 
@@ -67,15 +55,6 @@ class UsersView(LoginRequiredMixin, TemplateView):
 
         try:
             context['all_users'] = SQLiteDataHelper.execute_raw_query(
-                """
-                SELECT u.id, u.telegram_id, u.username, u.first_name, u.last_name,
-                       u.phone, u.email, u.created_at,
-                       COUNT(r.id) as registration_count
-                FROM users u
-                LEFT JOIN registrations r ON u.id = r.user_id
-                GROUP BY u.id
-                ORDER BY u.created_at DESC
-                """
             )
         except Exception as e:
             context['error'] = str(e)
@@ -83,7 +62,6 @@ class UsersView(LoginRequiredMixin, TemplateView):
         return context
 
 class CompetitionsView(LoginRequiredMixin, TemplateView):
-    """View for managing competitions."""
 
     template_name = 'admin_panel/competitions.html'
 
@@ -92,14 +70,6 @@ class CompetitionsView(LoginRequiredMixin, TemplateView):
 
         try:
             context['all_competitions'] = SQLiteDataHelper.execute_raw_query(
-                """
-                SELECT c.id, c.name, c.type, c.is_active, c.created_at,
-                       COUNT(r.id) as registration_count
-                FROM competitions c
-                LEFT JOIN registrations r ON c.id = r.competition_id
-                GROUP BY c.id
-                ORDER BY c.created_at DESC
-                """
             )
         except Exception as e:
             context['error'] = str(e)
@@ -108,7 +78,6 @@ class CompetitionsView(LoginRequiredMixin, TemplateView):
 
 @login_required
 def bot_stats_api(request):
-    """API endpoint for bot statistics."""
     try:
         data = {
             'users': SQLiteDataHelper.get_user_count(),
@@ -123,19 +92,8 @@ def bot_stats_api(request):
 
 @login_required
 def registration_detail(request, registration_id):
-    """Get registration details via API."""
     try:
         result = SQLiteDataHelper.execute_raw_query(
-            """
-            SELECT r.id, r.user_id, r.competition_id, r.role, r.status,
-                   r.created_at, r.is_confirmed,
-                   u.first_name, u.last_name, u.telegram_id, u.email, u.phone,
-                   c.name as competition_name
-            FROM registrations r
-            LEFT JOIN users u ON r.user_id = u.id
-            LEFT JOIN competitions c ON r.competition_id = c.id
-            WHERE r.id = ?
-            """,
             [registration_id]
         )
 
@@ -145,4 +103,3 @@ def registration_detail(request, registration_id):
             return JsonResponse({'success': False, 'error': 'Registration not found'}, status=404)
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
-

@@ -15,7 +15,6 @@ admin_applications_router = Router()
 @admin_applications_router.callback_query(F.data == "admin_applications")
 @admin_only
 async def list_applications_handler(callback: CallbackQuery, state: FSMContext):
-    """Show list of pending applications."""
     applications = await db_manager.get_pending_registrations()
 
     if not applications:
@@ -37,7 +36,6 @@ async def list_applications_handler(callback: CallbackQuery, state: FSMContext):
 @admin_applications_router.callback_query(F.data.startswith("app_view_"))
 @admin_only
 async def view_application_detail(callback: CallbackQuery, state: FSMContext):
-    """View detailed application information."""
     registration_id = int(callback.data.split("_")[2])
 
     reg_data = await db_manager.get_registration_with_user(registration_id)
@@ -59,7 +57,6 @@ async def view_application_detail(callback: CallbackQuery, state: FSMContext):
 @admin_applications_router.callback_query(F.data.startswith("app_approve_"))
 @admin_only
 async def approve_application_confirm(callback: CallbackQuery, state: FSMContext):
-    """Confirm approval of application."""
     registration_id = int(callback.data.split("_")[2])
 
     await callback.message.edit_text(
@@ -72,7 +69,6 @@ async def approve_application_confirm(callback: CallbackQuery, state: FSMContext
 @admin_applications_router.callback_query(F.data.startswith("confirm_approve_"))
 @admin_only
 async def approve_application_execute(callback: CallbackQuery, state: FSMContext):
-    """Execute application approval."""
     registration_id = int(callback.data.split("_")[2])
     admin_id = callback.from_user.id
 
@@ -94,7 +90,6 @@ async def approve_application_execute(callback: CallbackQuery, state: FSMContext
 @admin_applications_router.callback_query(F.data.startswith("app_reject_"))
 @admin_only
 async def reject_application_confirm(callback: CallbackQuery, state: FSMContext):
-    """Confirm rejection of application."""
     registration_id = int(callback.data.split("_")[2])
 
     await callback.message.edit_text(
@@ -107,7 +102,6 @@ async def reject_application_confirm(callback: CallbackQuery, state: FSMContext)
 @admin_applications_router.callback_query(F.data.startswith("confirm_reject_"))
 @admin_only
 async def reject_application_execute(callback: CallbackQuery, state: FSMContext):
-    """Execute application rejection."""
     registration_id = int(callback.data.split("_")[2])
 
     await db_manager.reject_registration(registration_id)
@@ -128,7 +122,6 @@ async def reject_application_execute(callback: CallbackQuery, state: FSMContext)
 @admin_applications_router.callback_query(F.data.startswith("app_revoke_"))
 @admin_only
 async def revoke_application_confirm(callback: CallbackQuery, state: FSMContext):
-    """Confirm revocation of approved application."""
     registration_id = int(callback.data.split("_")[2])
 
     await callback.message.edit_text(
@@ -141,7 +134,6 @@ async def revoke_application_confirm(callback: CallbackQuery, state: FSMContext)
 @admin_applications_router.callback_query(F.data.startswith("confirm_revoke_"))
 @admin_only
 async def revoke_application_execute(callback: CallbackQuery, state: FSMContext):
-    """Execute application revocation."""
     registration_id = int(callback.data.split("_")[2])
 
     await db_manager.revoke_registration(registration_id)
@@ -159,4 +151,3 @@ async def revoke_application_execute(callback: CallbackQuery, state: FSMContext)
     await callback.message.edit_text("⚠️ Регистрация отозвана")
     await state.clear()
     await callback.answer()
-

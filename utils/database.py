@@ -10,15 +10,12 @@ from models import (
 from migrations.migration_manager import MigrationManager
 
 class DatabaseManager:
-    """Класс для управления подключением к БД."""
 
     def __init__(self) -> None:
-        """Инициализация менеджера БД."""
         self.engine: Optional[AsyncEngine] = None
         self.async_session_maker: Optional[sessionmaker] = None
 
     async def init_db(self) -> None:
-        """Инициализировать БД и создать таблицы."""
         from config import DB_TYPE, PG_POOL_SIZE, PG_MAX_OVERFLOW
 
         if DB_TYPE == "postgresql":
@@ -50,16 +47,13 @@ class DatabaseManager:
         await migration_manager.run_migrations()
 
     async def close_db(self) -> None:
-        """Закрыть подключение к БД."""
         if self.engine:
             await self.engine.dispose()
 
     def get_session(self) -> AsyncSession:
-        """Получить сессию БД."""
         return self.async_session_maker()
 
     async def get_user_by_telegram_id(self, telegram_id: int) -> Optional[UserModel]:
-        """Получить пользователя по telegram_id."""
         async with self.get_session() as session:
             from sqlalchemy import select
             result = await session.execute(
@@ -68,7 +62,6 @@ class DatabaseManager:
             return result.scalar_one_or_none()
 
     async def create_user(self, telegram_id: int, telegram_username: str, **kwargs: Any) -> UserModel:
-        """Создать нового пользователя."""
         async with self.get_session() as session:
             user: UserModel = UserModel(
                 telegram_id=telegram_id,
@@ -80,7 +73,6 @@ class DatabaseManager:
             return user
 
     async def update_user(self, telegram_id: int, **kwargs: Any) -> Optional[UserModel]:
-        """Обновить данные пользователя."""
         user: Optional[UserModel] = await self.get_user_by_telegram_id(telegram_id)
         if not user:
             return None
@@ -94,7 +86,6 @@ class DatabaseManager:
             return user
 
     async def get_active_competitions(self) -> List[Dict[str, Any]]:
-        """Получить список активных соревнований."""
         async with self.get_session() as session:
             from sqlalchemy import select
             from .serializers import CompetitionSerializer
@@ -105,7 +96,6 @@ class DatabaseManager:
             return CompetitionSerializer.serialize_list(competitions)
 
     async def get_competition_by_id(self, competition_id: int) -> CompetitionModel:
-        """Получить соревнование по ID."""
         async with self.get_session() as session:
             from sqlalchemy import select
             result = await session.execute(
@@ -117,7 +107,6 @@ class DatabaseManager:
         self, user_id: int, telegram_id: int, competition_id: int, role: str,
         status: str = RegistrationStatus.PENDING.value
     ) -> RegistrationModel:
-        """Создать регистрацию пользователя на соревнование."""
         async with self.get_session() as session:
             registration = RegistrationModel(
                 user_id=user_id,
@@ -132,7 +121,6 @@ class DatabaseManager:
             return registration
 
     async def phone_exists(self, phone: str) -> bool:
-        """Проверить, существует ли пользователь с таким телефоном."""
         async with self.get_session() as session:
             from sqlalchemy import select
             result = await session.execute(
@@ -141,7 +129,6 @@ class DatabaseManager:
             return result.scalar_one_or_none() is not None
 
     async def email_exists(self, email: str) -> bool:
-        """Проверить, существует ли пользователь с таким email."""
         async with self.get_session() as session:
             from sqlalchemy import select
             result = await session.execute(
@@ -150,7 +137,6 @@ class DatabaseManager:
             return result.scalar_one_or_none() is not None
 
     async def get_pending_registrations(self, competition_id=None, role=None) -> list:
-        """Получить заявки со статусом pending."""
         async with self.get_session() as session:
             query = select(RegistrationModel).where(
                 RegistrationModel.status == RegistrationStatus.PENDING.value
@@ -165,7 +151,6 @@ class DatabaseManager:
             return result.scalars().all()
 
     async def get_registrations_by_status(self, status: str) -> list:
-        """Получить все регистрации по статусу."""
         async with self.get_session() as session:
             result = await session.execute(
                 select(RegistrationModel).where(RegistrationModel.status == status)
@@ -173,7 +158,6 @@ class DatabaseManager:
             return result.scalars().all()
 
     async def approve_registration(self, registration_id: int, admin_telegram_id: int) -> RegistrationModel:
-        """Одобрить заявку."""
         async with self.get_session() as session:
             registration = await session.get(RegistrationModel, registration_id)
             if registration:
@@ -187,7 +171,6 @@ class DatabaseManager:
             return registration
 
     async def reject_registration(self, registration_id: int) -> RegistrationModel:
-        """Отклонить заявку."""
         async with self.get_session() as session:
             registration = await session.get(RegistrationModel, registration_id)
             if registration:
@@ -198,7 +181,6 @@ class DatabaseManager:
             return registration
 
     async def revoke_registration(self, registration_id: int) -> RegistrationModel:
-        """Отозвать ранее одобренную заявку."""
         async with self.get_session() as session:
             registration = await session.get(RegistrationModel, registration_id)
             if registration:
@@ -211,7 +193,6 @@ class DatabaseManager:
             return registration
 
     async def get_registration_with_user(self, registration_id: int) -> dict:
-        """Получить регистрацию с данными пользователя (JOIN)."""
         async with self.get_session() as session:
             registration = await session.get(RegistrationModel, registration_id)
             if not registration:
@@ -239,7 +220,6 @@ class DatabaseManager:
             }
 
     async def get_time_slots_for_competition(self, competition_id: int) -> list:
-        """Получить все временные слоты для соревнования."""
         async with self.get_session() as session:
             result = await session.execute(
                 select(TimeSlotModel).where(
@@ -251,7 +231,6 @@ class DatabaseManager:
     async def create_time_slot(
         self, competition_id: int, slot_day, start_time, end_time, max_voters: int = 10
     ) -> TimeSlotModel:
-        """Создать временной слот."""
         async with self.get_session() as session:
             time_slot = TimeSlotModel(
                 competition_id=competition_id,
@@ -265,7 +244,6 @@ class DatabaseManager:
             return time_slot
 
     async def get_available_time_slots(self, competition_id: int) -> list:
-        """Получить слоты с доступными местами."""
         async with self.get_session() as session:
             time_slots = await self.get_time_slots_for_competition(competition_id)
             available = []
@@ -289,7 +267,6 @@ class DatabaseManager:
             return available
 
     async def assign_voter_to_time_slot(self, registration_id: int, time_slot_id: int) -> VoterTimeSlotModel:
-        """Назначить voter на временной слот."""
         async with self.get_session() as session:
             voter_slot = VoterTimeSlotModel(
                 registration_id=registration_id,
@@ -300,7 +277,6 @@ class DatabaseManager:
             return voter_slot
 
     async def get_voter_time_slots(self, registration_id: int) -> list:
-        """Получить выбранные слоты voter'а."""
         async with self.get_session() as session:
             result = await session.execute(
                 select(VoterTimeSlotModel).where(
@@ -318,7 +294,6 @@ class DatabaseManager:
             return time_slots
 
     async def get_jury_panels_for_competition(self, competition_id: int) -> list:
-        """Получить судейские коллегии."""
         async with self.get_session() as session:
             result = await session.execute(
                 select(JuryPanelModel).where(
@@ -330,7 +305,6 @@ class DatabaseManager:
     async def create_jury_panel(
         self, competition_id: int, panel_name: str, max_voters: int = 5
     ) -> JuryPanelModel:
-        """Создать судейскую коллегию."""
         async with self.get_session() as session:
             jury_panel = JuryPanelModel(
                 competition_id=competition_id,
@@ -342,7 +316,6 @@ class DatabaseManager:
             return jury_panel
 
     async def assign_voter_to_jury_panel(self, registration_id: int, jury_panel_id: int) -> VoterJuryPanelModel:
-        """Назначить voter в судейскую коллегию."""
         async with self.get_session() as session:
             voter_panel = VoterJuryPanelModel(
                 registration_id=registration_id,
@@ -353,7 +326,6 @@ class DatabaseManager:
             return voter_panel
 
     async def get_voter_jury_panels(self, registration_id: int) -> list:
-        """Получить судейские коллегии voter'а."""
         async with self.get_session() as session:
             result = await session.execute(
                 select(VoterJuryPanelModel).where(
@@ -371,7 +343,6 @@ class DatabaseManager:
             return jury_panels
 
     async def update_role_entry_status(self, competition_id: int, role: str, is_open: bool) -> CompetitionModel:
-        """Обновить статус открытия регистрации для конкретной роли."""
         async with self.get_session() as session:
             competition = await session.get(CompetitionModel, competition_id)
             if competition:
@@ -392,7 +363,6 @@ class DatabaseManager:
         description: Optional[str] = None,
         created_by: Optional[int] = None
     ) -> "MessageTemplate":
-        """Create a new message template for broadcasts."""
         from models import MessageTemplate
         async with self.get_session() as session:
             template = MessageTemplate(
@@ -418,7 +388,6 @@ class DatabaseManager:
         send_email: bool = False,
         created_by: int = 0
     ) -> "Broadcast":
-        """Create a new broadcast campaign."""
         from models import Broadcast, BroadcastStatus
         async with self.get_session() as session:
             broadcast = Broadcast(
@@ -435,7 +404,6 @@ class DatabaseManager:
             return broadcast
 
     async def get_broadcasts(self, status: Optional[str] = None) -> List["Broadcast"]:
-        """Get list of broadcasts, optionally filtered by status."""
         from models import Broadcast
         async with self.get_session() as session:
             query = select(Broadcast)
@@ -445,13 +413,11 @@ class DatabaseManager:
             return result.scalars().all()
 
     async def get_broadcast_by_id(self, broadcast_id: int) -> Optional["Broadcast"]:
-        """Get broadcast by ID."""
         from models import Broadcast
         async with self.get_session() as session:
             return await session.get(Broadcast, broadcast_id)
 
     async def get_broadcast_statistics(self, broadcast_id: int) -> Dict[str, Any]:
-        """Get statistics for a broadcast."""
         from models import Broadcast, BroadcastRecipient
         async with self.get_session() as session:
             broadcast = await session.get(Broadcast, broadcast_id)
@@ -486,7 +452,6 @@ class DatabaseManager:
             }
 
     async def get_message_templates(self, active_only: bool = False) -> List["MessageTemplate"]:
-        """Get list of message templates."""
         from models import MessageTemplate
         async with self.get_session() as session:
             query = select(MessageTemplate)
@@ -496,4 +461,3 @@ class DatabaseManager:
             return result.scalars().all()
 
 db_manager = DatabaseManager()
-

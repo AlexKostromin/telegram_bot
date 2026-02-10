@@ -10,7 +10,6 @@ from .models import BotDashboardStat, AdminLog, SQLiteDataHelper
 from django.db import models as django_models
 
 class Competition(django_models.Model):
-    """Django model for Competition."""
     id = django_models.IntegerField(primary_key=True, verbose_name='ID')
     name = django_models.CharField(max_length=255, verbose_name='Название')
     description = django_models.CharField(max_length=500, null=True, blank=True, verbose_name='Описание')
@@ -38,7 +37,6 @@ class Competition(django_models.Model):
         return f"{self.name}"
 
     def registration_count(self):
-        """Get count of registrations."""
         with connection.cursor() as cursor:
             cursor.execute(
                 "SELECT COUNT(*) FROM registrations WHERE competition_id = %s",
@@ -47,7 +45,6 @@ class Competition(django_models.Model):
             return cursor.fetchone()[0]
 
     def approved_count(self):
-        """Get count of approved registrations."""
         with connection.cursor() as cursor:
             cursor.execute(
                 "SELECT COUNT(*) FROM registrations WHERE competition_id = %s AND status = 'approved'",
@@ -56,7 +53,6 @@ class Competition(django_models.Model):
             return cursor.fetchone()[0]
 
 class User(django_models.Model):
-    """Django model for User."""
     id = django_models.IntegerField(primary_key=True, verbose_name='ID')
     telegram_id = django_models.BigIntegerField(unique=True, verbose_name='Telegram ID')
     telegram_username = django_models.CharField(max_length=255, null=True, blank=True, verbose_name='Telegram имя пользователя')
@@ -88,7 +84,6 @@ class User(django_models.Model):
         return f"{self.first_name} {self.last_name}".strip() or f"User #{self.telegram_id}"
 
     def registration_count(self):
-        """Get count of registrations."""
         with connection.cursor() as cursor:
             cursor.execute(
                 "SELECT COUNT(*) FROM registrations WHERE user_id = %s",
@@ -97,7 +92,6 @@ class User(django_models.Model):
             return cursor.fetchone()[0]
 
 class Registration(django_models.Model):
-    """Django model for Registration."""
     STATUS_CHOICES = [
         ('pending', 'На рассмотрении'),
         ('approved', 'Одобрено'),
@@ -134,21 +128,18 @@ class Registration(django_models.Model):
         return f"Регистрация #{self.id} ({self.get_status_display()})"
 
     def get_user(self):
-        """Get user object."""
         try:
             return User.objects.get(id=self.user_id)
         except User.DoesNotExist:
             return None
 
     def get_competition(self):
-        """Get competition object."""
         try:
             return Competition.objects.get(id=self.competition_id)
         except Competition.DoesNotExist:
             return None
 
 class TimeSlot(django_models.Model):
-    """Django model for TimeSlot."""
     id = django_models.IntegerField(primary_key=True, verbose_name='ID')
     competition_id = django_models.IntegerField(verbose_name='ID соревнования')
     slot_day = django_models.DateField(verbose_name='День')
@@ -169,7 +160,6 @@ class TimeSlot(django_models.Model):
         return f"{self.slot_day} {self.start_time}-{self.end_time}"
 
     def get_competition(self):
-        """Get competition name."""
         try:
             comp = Competition.objects.get(id=self.competition_id)
             return comp.name
@@ -177,7 +167,6 @@ class TimeSlot(django_models.Model):
             return f"Соревнование #{self.competition_id}"
 
 class JuryPanel(django_models.Model):
-    """Django model for JuryPanel."""
     id = django_models.IntegerField(primary_key=True, verbose_name='ID')
     competition_id = django_models.IntegerField(verbose_name='ID соревнования')
     panel_name = django_models.CharField(max_length=100, verbose_name='Название коллегии')
@@ -195,7 +184,6 @@ class JuryPanel(django_models.Model):
         return self.panel_name
 
     def get_competition(self):
-        """Get competition name."""
         try:
             comp = Competition.objects.get(id=self.competition_id)
             return comp.name
@@ -204,7 +192,6 @@ class JuryPanel(django_models.Model):
 
 @admin.register(BotDashboardStat)
 class BotDashboardStatAdmin(admin.ModelAdmin):
-    """Admin interface for Dashboard Statistics."""
 
     list_display = ['stat_name', 'stat_value', 'updated_at']
     list_filter = ['updated_at']
@@ -212,16 +199,13 @@ class BotDashboardStatAdmin(admin.ModelAdmin):
     readonly_fields = ['updated_at']
 
     def has_add_permission(self, request):
-        """Only superusers can add statistics."""
         return request.user.is_superuser
 
     def has_delete_permission(self, request, obj=None):
-        """Only superusers can delete statistics."""
         return request.user.is_superuser
 
 @admin.register(AdminLog)
 class AdminLogAdmin(admin.ModelAdmin):
-    """Admin interface for Admin Activity Logs."""
 
     list_display = ['get_action_badge', 'target_type', 'target_id', 'created_at']
     list_filter = ['action', 'target_type', 'created_at']
@@ -229,7 +213,6 @@ class AdminLogAdmin(admin.ModelAdmin):
     readonly_fields = ['admin_id', 'action', 'target_type', 'target_id', 'description', 'created_at']
 
     def get_action_badge(self, obj):
-        """Display action with color badge."""
         colors = {
             'approve': '#28a745',
             'reject': '#dc3545',
@@ -249,16 +232,13 @@ class AdminLogAdmin(admin.ModelAdmin):
     get_action_badge.short_description = 'Действие'
 
     def has_add_permission(self, request):
-        """Users cannot manually add logs."""
         return False
 
     def has_delete_permission(self, request, obj=None):
-        """Only superusers can delete logs."""
         return request.user.is_superuser
 
 @admin.register(Competition)
 class CompetitionAdmin(admin.ModelAdmin):
-    """Admin interface for Competitions."""
 
     list_display = ['name', 'competition_type', 'get_status_badge', 'get_registration_count', 'created_at']
     list_filter = ['competition_type', 'is_active', 'created_at']
@@ -282,7 +262,6 @@ class CompetitionAdmin(admin.ModelAdmin):
     )
 
     def get_status_badge(self, obj):
-        """Display status badge."""
         if obj.is_active:
             color, text = '#28a745', 'Активно'
         else:
@@ -295,7 +274,6 @@ class CompetitionAdmin(admin.ModelAdmin):
     get_status_badge.short_description = 'Статус'
 
     def get_registration_count(self, obj):
-        """Get registration count."""
         count = obj.registration_count()
         approved = obj.approved_count()
         return format_html(
@@ -305,7 +283,6 @@ class CompetitionAdmin(admin.ModelAdmin):
     get_registration_count.short_description = 'Регистрации'
 
     def get_registration_stats(self, obj):
-        """Get detailed registration statistics."""
         total = obj.registration_count()
         approved = obj.approved_count()
         return format_html(
@@ -318,7 +295,6 @@ class CompetitionAdmin(admin.ModelAdmin):
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    """Admin interface for Users."""
 
     list_display = ['get_full_name', 'telegram_id', 'phone', 'email', 'get_registration_count', 'created_at']
     list_filter = ['country', 'city', 'is_active', 'created_at']
@@ -345,7 +321,6 @@ class UserAdmin(admin.ModelAdmin):
     )
 
     def send_notification_action(self, request, queryset):
-        """Send notification to selected users via Telegram and Email."""
         import asyncio
         import os
         import sys
@@ -357,37 +332,7 @@ class UserAdmin(admin.ModelAdmin):
         users = list(queryset.values_list('telegram_id', 'email', 'first_name', 'last_name'))
         count = len(users)
 
-        message_tg = """
-🔔 ВАЖНОЕ УВЕДОМЛЕНИЕ
 
-Уважаемые участники!
-
-Соревнование начинается завтра!
-Не забудьте проверить свои данные в профиле.
-
-Если у вас есть вопросы, свяжитесь с организаторами.
-
-С уважением,
-Команда USN
-        """.strip()
-
-        message_email = """
-<html>
-<body style="font-family: Arial, sans-serif; color: #333;">
-<p>🔔 <strong>ВАЖНОЕ УВЕДОМЛЕНИЕ</strong></p>
-
-<p>Уважаемые участники!</p>
-
-<p>Соревнование начинается завтра!<br>
-Не забудьте проверить свои данные в профиле.</p>
-
-<p>Если у вас есть вопросы, свяжитесь с организаторами.</p>
-
-<p>С уважением,<br>
-Команда USN</p>
-</body>
-</html>
-        """.strip()
 
         from dotenv import load_dotenv
         load_dotenv('/home/alex/Документы/telegram_bot/.env')
@@ -439,22 +384,18 @@ class UserAdmin(admin.ModelAdmin):
     send_notification_action.short_description = '📤 Отправить в Telegram + Email'
 
     def get_full_name(self, obj):
-        """Get full name."""
         return f"{obj.first_name} {obj.last_name}".strip() or f"User #{obj.telegram_id}"
     get_full_name.short_description = 'ФИО'
 
     def get_registration_count(self, obj):
-        """Get registration count."""
         return obj.registration_count()
     get_registration_count.short_description = 'Регистрации'
 
     def has_delete_permission(self, request, obj=None):
-        """Only superusers can delete users."""
         return request.user.is_superuser
 
 @admin.register(Registration)
 class RegistrationAdmin(admin.ModelAdmin):
-    """Admin interface for Registrations."""
 
     list_display = ['id', 'get_user_name', 'get_competition_name', 'role', 'get_status_badge', 'created_at']
     list_filter = ['status', 'role', 'is_confirmed', 'created_at']
@@ -480,7 +421,6 @@ class RegistrationAdmin(admin.ModelAdmin):
     actions = ['approve_registrations', 'reject_registrations', 'mark_as_confirmed']
 
     def get_user_name(self, obj):
-        """Get user name."""
         user = obj.get_user()
         if user:
             return f"{user.first_name} {user.last_name}".strip()
@@ -488,7 +428,6 @@ class RegistrationAdmin(admin.ModelAdmin):
     get_user_name.short_description = 'Пользователь'
 
     def get_competition_name(self, obj):
-        """Get competition name."""
         competition = obj.get_competition()
         if competition:
             return competition.name
@@ -496,7 +435,6 @@ class RegistrationAdmin(admin.ModelAdmin):
     get_competition_name.short_description = 'Соревнование'
 
     def get_status_badge(self, obj):
-        """Display status badge."""
         colors = {
             'pending': '#ffc107',
             'approved': '#28a745',
@@ -511,7 +449,6 @@ class RegistrationAdmin(admin.ModelAdmin):
     get_status_badge.short_description = 'Статус'
 
     def get_user_info(self, obj):
-        """Get detailed user information."""
         user = obj.get_user()
         if user:
             return format_html(
@@ -531,7 +468,6 @@ class RegistrationAdmin(admin.ModelAdmin):
     get_user_info.short_description = 'Информация о пользователе'
 
     def get_competition_info(self, obj):
-        """Get detailed competition information."""
         competition = obj.get_competition()
         if competition:
             return format_html(
@@ -548,26 +484,22 @@ class RegistrationAdmin(admin.ModelAdmin):
     get_competition_info.short_description = 'Информация о соревновании'
 
     def approve_registrations(self, request, queryset):
-        """Bulk approve registrations."""
         updated = queryset.filter(status='pending').update(status='approved')
         self.message_user(request, f'✅ Одобрено {updated} заявок.')
     approve_registrations.short_description = 'Одобрить выбранные заявки'
 
     def reject_registrations(self, request, queryset):
-        """Bulk reject registrations."""
         updated = queryset.filter(status='pending').update(status='rejected')
         self.message_user(request, f'❌ Отклонено {updated} заявок.')
     reject_registrations.short_description = 'Отклонить выбранные заявки'
 
     def mark_as_confirmed(self, request, queryset):
-        """Mark registrations as confirmed."""
         updated = queryset.update(is_confirmed=True)
         self.message_user(request, f'✔️ Подтверждено {updated} заявок.')
     mark_as_confirmed.short_description = 'Отметить как подтвержденные'
 
 @admin.register(TimeSlot)
 class TimeSlotAdmin(admin.ModelAdmin):
-    """Admin interface for Time Slots."""
 
     list_display = ['slot_day', 'start_time', 'end_time', 'get_competition_name', 'max_voters', 'is_active']
     list_filter = ['slot_day', 'is_active', 'competition_id']
@@ -587,12 +519,10 @@ class TimeSlotAdmin(admin.ModelAdmin):
     )
 
     def get_competition_name(self, obj):
-        """Get competition name."""
         return obj.get_competition()
     get_competition_name.short_description = 'Соревнование'
 
     def save_model(self, request, obj, form, change):
-        """Save model and show message."""
         super().save_model(request, obj, form, change)
         if change:
             self.message_user(request, f'✅ Временной слот обновлен: {obj.slot_day} {obj.start_time}-{obj.end_time}')
@@ -601,7 +531,6 @@ class TimeSlotAdmin(admin.ModelAdmin):
 
 @admin.register(JuryPanel)
 class JuryPanelAdmin(admin.ModelAdmin):
-    """Admin interface for Jury Panels."""
 
     list_display = ['panel_name', 'get_competition_name', 'max_voters', 'is_active']
     list_filter = ['is_active', 'competition_id']
@@ -621,12 +550,10 @@ class JuryPanelAdmin(admin.ModelAdmin):
     )
 
     def get_competition_name(self, obj):
-        """Get competition name."""
         return obj.get_competition()
     get_competition_name.short_description = 'Соревнование'
 
     def save_model(self, request, obj, form, change):
-        """Save model and show message."""
         super().save_model(request, obj, form, change)
         if change:
             self.message_user(request, f'✅ Судейская коллегия обновлена: {obj.panel_name}')
@@ -634,7 +561,6 @@ class JuryPanelAdmin(admin.ModelAdmin):
             self.message_user(request, f'✅ Судейская коллегия создана: {obj.panel_name}')
 
 class MessageTemplateAdmin(admin.ModelAdmin):
-    """Admin interface for message templates."""
 
     list_display = ('name', 'is_active', 'get_preview', 'created_at')
     list_filter = ('is_active', 'created_at')
@@ -659,7 +585,6 @@ class MessageTemplateAdmin(admin.ModelAdmin):
     )
 
     def get_preview(self, obj):
-        """Show template preview in list view."""
         return format_html(
             '<button style="background-color: #417690; color: white; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer;">'
             'Предпросмотр</button>'
@@ -667,7 +592,6 @@ class MessageTemplateAdmin(admin.ModelAdmin):
     get_preview.short_description = 'Действие'
 
     def available_variables_display(self, obj):
-        """Display available variables."""
         if not obj.available_variables:
             return "Переменные не определены"
         html = "<table style='width: 100%;'>"
@@ -678,7 +602,6 @@ class MessageTemplateAdmin(admin.ModelAdmin):
     available_variables_display.short_description = 'Доступные переменные'
 
 class BroadcastRecipientInline(admin.TabularInline):
-    """Inline view of broadcast recipients."""
 
     model = __import__('admin_panel.apps.BotDataApp.models', fromlist=['BroadcastRecipient']).BroadcastRecipient
     extra = 0
@@ -690,7 +613,6 @@ class BroadcastRecipientInline(admin.TabularInline):
     fields = ('user_id', 'telegram_id', 'email_address', 'telegram_status', 'email_status')
 
 class BroadcastAdmin(admin.ModelAdmin):
-    """Admin interface for broadcasts."""
 
     list_display = (
         'name',
@@ -733,7 +655,6 @@ class BroadcastAdmin(admin.ModelAdmin):
     )
 
     def get_status_badge(self, obj):
-        """Show status as colored badge."""
         status_colors = {
             'draft': '#999',
             'scheduled': '#FF9800',
@@ -751,7 +672,6 @@ class BroadcastAdmin(admin.ModelAdmin):
     get_status_badge.short_description = 'Статус'
 
     def get_progress_bar(self, obj):
-        """Show progress bar."""
         if obj.total_recipients == 0:
             return "Без получателей"
         progress = obj.get_progress_percent()
@@ -765,7 +685,6 @@ class BroadcastAdmin(admin.ModelAdmin):
     get_progress_bar.short_description = 'Прогресс'
 
     def get_recipient_count(self, obj):
-        """Show recipient count."""
         return format_html(
             '<strong>{}</strong> / {} ({} ошибок)',
             obj.sent_count,
@@ -775,7 +694,6 @@ class BroadcastAdmin(admin.ModelAdmin):
     get_recipient_count.short_description = 'Отправлено'
 
     def get_filter_summary(self, obj):
-        """Show filter summary."""
         if not obj.filters:
             return "Фильтры не установлены"
         html = "<ul>"
@@ -788,20 +706,17 @@ class BroadcastAdmin(admin.ModelAdmin):
     get_filter_summary.short_description = 'Применяемые фильтры'
 
     def execute_broadcast(self, request, queryset):
-        """Execute selected broadcasts."""
         selected = queryset.filter(status='draft')
         updated = selected.update(status='in_progress')
         self.message_user(request, f'✅ Запущено {updated} рассылок.')
     execute_broadcast.short_description = '▶️ Запустить выбранные рассылки'
 
     def reset_broadcast(self, request, queryset):
-        """Reset broadcast to draft."""
         updated = queryset.update(status='draft', sent_count=0, failed_count=0)
         self.message_user(request, f'🔄 Сброшено {updated} рассылок.')
     reset_broadcast.short_description = '🔄 Сбросить на черновик'
 
 class BroadcastRecipientAdmin(admin.ModelAdmin):
-    """Admin interface for broadcast recipients."""
 
     list_display = (
         'user_id',
@@ -841,7 +756,6 @@ class BroadcastRecipientAdmin(admin.ModelAdmin):
     )
 
     def get_telegram_status(self, obj):
-        """Show Telegram status with icon."""
         status_icons = {
             'pending': '⏳',
             'sent': '✅',
@@ -866,7 +780,6 @@ class BroadcastRecipientAdmin(admin.ModelAdmin):
     get_telegram_status.short_description = 'Telegram'
 
     def get_email_status(self, obj):
-        """Show Email status with icon."""
         status_icons = {
             'pending': '⏳',
             'sent': '✅',
@@ -891,14 +804,12 @@ class BroadcastRecipientAdmin(admin.ModelAdmin):
     get_email_status.short_description = 'Email'
 
 class BotDataAdmin(admin.AdminSite):
-    """Custom admin site for Bot Data Management."""
 
     site_header = "USN Telegram Bot - Администрирование"
     site_title = "Админка бота"
     index_title = "Добро пожаловать в панель администрирования"
 
     def index(self, request, extra_context=None):
-        """Customize admin index page with bot statistics."""
         extra_context = extra_context or {}
 
         try:
@@ -938,4 +849,3 @@ from .models import MessageTemplate, Broadcast, BroadcastRecipient
 bot_admin_site.register(MessageTemplate, MessageTemplateAdmin)
 bot_admin_site.register(Broadcast, BroadcastAdmin)
 bot_admin_site.register(BroadcastRecipient, BroadcastRecipientAdmin)
-

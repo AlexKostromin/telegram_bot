@@ -12,13 +12,6 @@ confirmation_router = Router()
 
 @confirmation_router.callback_query(F.data == "yes", RegistrationStates.waiting_for_final_confirmation)
 async def final_confirmation_yes(query: CallbackQuery, state: FSMContext) -> None:
-    """
-    Обработчик финального подтверждения данных (ДА).
-
-    Args:
-        query: Объект callback query
-        state: Контекст FSM
-    """
     state_data = await state.get_data()
     user_telegram_id = query.from_user.id
     selected_competition = state_data.get("selected_competition")
@@ -109,13 +102,6 @@ async def final_confirmation_yes(query: CallbackQuery, state: FSMContext) -> Non
 
 @confirmation_router.callback_query(F.data == "no", RegistrationStates.waiting_for_final_confirmation)
 async def final_confirmation_no(query: CallbackQuery, state: FSMContext) -> None:
-    """
-    Обработчик отказа от финального подтверждения (НЕТ).
-
-    Args:
-        query: Объект callback query
-        state: Контекст FSM
-    """
     state_data = await state.get_data()
     selected_role = state_data.get("selected_role", "spectator")
 
@@ -131,13 +117,6 @@ async def final_confirmation_no(query: CallbackQuery, state: FSMContext) -> None
 
 @confirmation_router.callback_query(F.data == "yes", RegistrationStates.registration_complete)
 async def registration_complete_yes(query: CallbackQuery, state: FSMContext) -> None:
-    """
-    Обработчик завершения процесса регистрации существующего пользователя (ДА).
-
-    Args:
-        query: Объект callback query
-        state: Контекст FSM
-    """
     state_data = await state.get_data()
     user_telegram_id = query.from_user.id
     selected_competition = state_data.get("selected_competition")
@@ -181,4 +160,3 @@ async def registration_complete_yes(query: CallbackQuery, state: FSMContext) -> 
 
     await state.clear()
     await query.answer()
-

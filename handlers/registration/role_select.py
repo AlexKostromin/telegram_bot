@@ -13,13 +13,6 @@ role_select_router = Router()
 
 @role_select_router.callback_query(F.data.startswith("role_"), RegistrationStates.waiting_for_role_select)
 async def role_select_callback(query: CallbackQuery, state: FSMContext) -> None:
-    """
-    Обработчик выбора роли.
-
-    Args:
-        query: Объект callback query
-        state: Контекст FSM
-    """
 
     selected_role: str = query.data.split("_")[1]
 
@@ -72,4 +65,3 @@ async def role_select_callback(query: CallbackQuery, state: FSMContext) -> None:
         )
 
     await query.answer()
-

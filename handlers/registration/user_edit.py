@@ -14,13 +14,6 @@ user_edit_router = Router()
 
 @user_edit_router.callback_query(F.data == "yes", RegistrationStates.waiting_for_existing_user_confirmation)
 async def user_data_confirmed(query: CallbackQuery, state: FSMContext) -> None:
-    """
-    Обработчик подтверждения данных пользователя (Да).
-
-    Args:
-        query: Объект callback query
-        state: Контекст FSM
-    """
 
     await state.set_state(RegistrationStates.registration_complete)
     await state.update_data(data_confirmed=True)
@@ -29,13 +22,6 @@ async def user_data_confirmed(query: CallbackQuery, state: FSMContext) -> None:
 
 @user_edit_router.callback_query(F.data == "no", RegistrationStates.waiting_for_existing_user_confirmation)
 async def user_data_edit_needed(query: CallbackQuery, state: FSMContext) -> None:
-    """
-    Обработчик начала редактирования данных (Нет).
-
-    Args:
-        query: Объект callback query
-        state: Контекст FSM
-    """
 
     state_data: Dict[str, Any] = await state.get_data()
     selected_role: str = state_data.get("selected_role", "spectator")
@@ -51,13 +37,6 @@ async def user_data_edit_needed(query: CallbackQuery, state: FSMContext) -> None
 
 @user_edit_router.callback_query(F.data.startswith("edit_field_"), RegistrationStates.waiting_for_edit_field_select)
 async def edit_field_selected(query: CallbackQuery, state: FSMContext) -> None:
-    """
-    Обработчик выбора поля для редактирования.
-
-    Args:
-        query: Объект callback query
-        state: Контекст FSM
-    """
 
     field_name: str = query.data.split("_", 2)[2]
 
@@ -73,13 +52,6 @@ async def edit_field_selected(query: CallbackQuery, state: FSMContext) -> None:
 
 @user_edit_router.message(StateFilter(RegistrationStates.waiting_for_field_edit_input))
 async def edit_field_input(message: Message, state: FSMContext) -> None:
-    """
-    Обработчик ввода нового значения поля.
-
-    Args:
-        message: Объект сообщения
-        state: Контекст FSM
-    """
     state_data: Dict[str, Any] = await state.get_data()
     editing_field: str = state_data.get("editing_field")
 
@@ -121,13 +93,6 @@ async def edit_field_input(message: Message, state: FSMContext) -> None:
 
 @user_edit_router.callback_query(F.data == "yes", RegistrationStates.waiting_for_edit_confirmation)
 async def continue_editing(query: CallbackQuery, state: FSMContext) -> None:
-    """
-    Обработчик продолжения редактирования.
-
-    Args:
-        query: Объект callback query
-        state: Контекст FSM
-    """
 
     state_data = await state.get_data()
     selected_role = state_data.get("selected_role", "spectator")
@@ -143,13 +108,6 @@ async def continue_editing(query: CallbackQuery, state: FSMContext) -> None:
 
 @user_edit_router.callback_query(F.data == "no", RegistrationStates.waiting_for_edit_confirmation)
 async def finish_editing(query: CallbackQuery, state: FSMContext) -> None:
-    """
-    Обработчик завершения редактирования.
-
-    Args:
-        query: Объект callback query
-        state: Контекст FSM
-    """
 
     user: Optional[UserModel] = await db_manager.get_user_by_telegram_id(query.from_user.id)
     state_data: Dict[str, Any] = await state.get_data()
@@ -182,4 +140,3 @@ async def finish_editing(query: CallbackQuery, state: FSMContext) -> None:
         reply_markup=InlineKeyboards.yes_no_keyboard(),
     )
     await query.answer()
-

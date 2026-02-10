@@ -17,4 +17,3 @@ __all__ = [
     "PG_MAX_OVERFLOW",
     "get_database_type",
 ]
-

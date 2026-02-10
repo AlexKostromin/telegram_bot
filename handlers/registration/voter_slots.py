@@ -14,7 +14,6 @@ voter_slots_router = Router()
     StateFilter(RegistrationStates.waiting_for_time_slot_selection)
 )
 async def time_slot_selection_handler(callback: CallbackQuery, state: FSMContext):
-    """Handle time slot selection (multi-select)."""
     if callback.data == "slots_confirm":
         data = await state.get_data()
         selected_slots = data.get('selected_time_slots', [])
@@ -118,7 +117,6 @@ async def time_slot_selection_handler(callback: CallbackQuery, state: FSMContext
     StateFilter(RegistrationStates.waiting_for_jury_panel_selection)
 )
 async def jury_panel_selection_handler(callback: CallbackQuery, state: FSMContext):
-    """Handle jury panel selection."""
     if callback.data.startswith("panel_select_"):
         panel_id = int(callback.data.split("_")[2])
         await state.update_data(selected_jury_panel=panel_id)
@@ -153,4 +151,3 @@ async def jury_panel_selection_handler(callback: CallbackQuery, state: FSMContex
             )
 
         await callback.answer()
-

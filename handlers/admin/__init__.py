@@ -7,4 +7,3 @@ __all__ = [
     "admin_applications_router",
     "admin_competitions_router",
 ]
-

@@ -19,7 +19,6 @@ except ImportError:
     SQLALCHEMY_MODELS_AVAILABLE = False
 
 class BotDashboardStat(models.Model):
-    """Cache statistics for the dashboard."""
 
     stat_name = models.CharField(max_length=100, unique=True, verbose_name='Название статистики')
     stat_value = models.IntegerField(default=0, verbose_name='Значение')
@@ -33,7 +32,6 @@ class BotDashboardStat(models.Model):
         return f"{self.stat_name}: {self.stat_value}"
 
 class SQLiteDataHelper(models.Model):
-    """Helper model to access raw SQLite data."""
 
     class Meta:
         managed = False
@@ -41,7 +39,6 @@ class SQLiteDataHelper(models.Model):
 
     @staticmethod
     def execute_raw_query(query, params=None):
-        """Execute raw SQL query and return results."""
         with connection.cursor() as cursor:
             if params:
                 cursor.execute(query, params)
@@ -52,7 +49,6 @@ class SQLiteDataHelper(models.Model):
 
     @staticmethod
     def get_user_count():
-        """Get total number of users."""
         try:
             results = SQLiteDataHelper.execute_raw_query(
                 "SELECT COUNT(*) as count FROM users"
@@ -63,7 +59,6 @@ class SQLiteDataHelper(models.Model):
 
     @staticmethod
     def get_competition_count():
-        """Get total number of competitions."""
         try:
             results = SQLiteDataHelper.execute_raw_query(
                 "SELECT COUNT(*) as count FROM competitions"
@@ -74,7 +69,6 @@ class SQLiteDataHelper(models.Model):
 
     @staticmethod
     def get_registration_count():
-        """Get total number of registrations."""
         try:
             results = SQLiteDataHelper.execute_raw_query(
                 "SELECT COUNT(*) as count FROM registrations"
@@ -85,7 +79,6 @@ class SQLiteDataHelper(models.Model):
 
     @staticmethod
     def get_registrations_by_status():
-        """Get registration count by status."""
         try:
             results = SQLiteDataHelper.execute_raw_query(
                 "SELECT status, COUNT(*) as count FROM registrations GROUP BY status"
@@ -96,7 +89,6 @@ class SQLiteDataHelper(models.Model):
 
     @staticmethod
     def get_active_competitions():
-        """Get list of active competitions."""
         try:
             results = SQLiteDataHelper.execute_raw_query(
                 "SELECT id, name FROM competitions WHERE is_active = 1"
@@ -107,18 +99,8 @@ class SQLiteDataHelper(models.Model):
 
     @staticmethod
     def get_recent_registrations(limit=10):
-        """Get recent registrations."""
         try:
             results = SQLiteDataHelper.execute_raw_query(
-                f"""
-                SELECT r.id, r.user_id, r.competition_id, r.role, r.status,
-                       u.first_name, u.last_name, c.name as competition_name
-                FROM registrations r
-                LEFT JOIN users u ON r.user_id = u.id
-                LEFT JOIN competitions c ON r.competition_id = c.id
-                ORDER BY r.id DESC
-                LIMIT {limit}
-                """
             )
             return results
         except Exception:
@@ -126,7 +108,6 @@ class SQLiteDataHelper(models.Model):
 
     @staticmethod
     def get_users_by_role():
-        """Get user count by role in registrations."""
         try:
             results = SQLiteDataHelper.execute_raw_query(
                 "SELECT role, COUNT(*) as count FROM registrations GROUP BY role"
@@ -136,7 +117,6 @@ class SQLiteDataHelper(models.Model):
             return []
 
 class AdminLog(models.Model):
-    """Log of admin actions."""
 
     ACTION_CHOICES = [
         ('approve', 'Одобрена регистрация'),
@@ -163,7 +143,6 @@ class AdminLog(models.Model):
         return f"{self.get_action_display()} - {self.target_type}:{self.target_id}"
 
 class MessageTemplate(models.Model):
-    """Message template for broadcasts."""
 
     id = models.IntegerField(primary_key=True)
     name = models.CharField(max_length=255, unique=True, verbose_name='Название')
@@ -188,7 +167,6 @@ class MessageTemplate(models.Model):
         return f"{self.name}"
 
 class Broadcast(models.Model):
-    """Broadcast campaign."""
 
     STATUS_CHOICES = [
         ('draft', 'Черновик'),
@@ -231,13 +209,11 @@ class Broadcast(models.Model):
         return f"{self.name} ({self.get_status_display()})"
 
     def get_progress_percent(self):
-        """Get progress percentage."""
         if self.total_recipients == 0:
             return 0
         return int((self.sent_count / self.total_recipients) * 100)
 
 class BroadcastRecipient(models.Model):
-    """Broadcast recipient delivery status."""
 
     STATUS_CHOICES = [
         ('pending', 'Ожидает'),
@@ -285,6 +261,4 @@ class BroadcastRecipient(models.Model):
         return f"Recipient {self.user_id} - {self.broadcast_id}"
 
     def is_sent(self):
-        """Check if sent to at least one channel."""
         return self.telegram_status == 'sent' or self.email_status == 'sent'
-

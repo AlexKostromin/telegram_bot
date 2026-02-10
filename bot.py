@@ -19,10 +19,8 @@ from handlers import (
 )
 
 class USNBot:
-    """Класс для управления Telegram ботом USN."""
 
     def __init__(self) -> None:
-        """Инициализация бота."""
         self.bot: Bot = Bot(token=BOT_TOKEN)
         self.storage: MemoryStorage = MemoryStorage()
         self.dispatcher: Dispatcher = Dispatcher(storage=self.storage)
@@ -31,7 +29,6 @@ class USNBot:
         self._set_default_commands()
 
     def _register_handlers(self) -> None:
-        """Регистрировать все обработчики."""
         self.dispatcher.include_routers(
             admin_main_router,
             admin_applications_router,
@@ -48,7 +45,6 @@ class USNBot:
         )
 
     def _set_default_commands(self) -> None:
-        """Установить команды бота по умолчанию."""
         self.default_commands = [
             BotCommand(command="start", description="Начать работу с ботом"),
             BotCommand(command="help", description="Справка по использованию"),
@@ -56,11 +52,9 @@ class USNBot:
         ]
 
     async def set_commands(self) -> None:
-        """Установить команды на сервере Telegram."""
         await self.bot.set_my_commands(self.default_commands)
 
     async def start_polling(self) -> None:
-        """Запустить polling."""
         await self.set_commands()
         try:
             await self.dispatcher.start_polling(self.bot)
@@ -68,14 +62,10 @@ class USNBot:
             await self.bot.session.close()
 
     async def close(self) -> None:
-        """Закрыть соединение с ботом."""
         await self.bot.session.close()
 
     def get_dispatcher(self) -> Dispatcher:
-        """Получить dispatcher бота."""
         return self.dispatcher
 
     def get_bot(self) -> Bot:
-        """Получить объект бота."""
         return self.bot
-

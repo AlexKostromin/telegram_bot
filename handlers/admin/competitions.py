@@ -13,7 +13,6 @@ from states import AdminStates
 admin_competitions_router = Router()
 
 def competitions_list_keyboard(competitions: list):
-    """Create keyboard with competitions list."""
     from aiogram.utils.keyboard import InlineKeyboardBuilder
 
     builder = InlineKeyboardBuilder()
@@ -29,7 +28,6 @@ def competitions_list_keyboard(competitions: list):
 @admin_competitions_router.callback_query(F.data == "admin_competitions")
 @admin_only
 async def list_competitions(callback: CallbackQuery, state: FSMContext):
-    """List active competitions."""
     competitions = await db_manager.get_active_competitions()
 
     if not competitions:
@@ -51,7 +49,6 @@ async def list_competitions(callback: CallbackQuery, state: FSMContext):
 @admin_competitions_router.callback_query(F.data.startswith("comp_manage_"))
 @admin_only
 async def manage_competition(callback: CallbackQuery, state: FSMContext):
-    """Manage specific competition entry flags."""
     competition_id = int(callback.data.split("_")[2])
     competition = await db_manager.get_competition_by_id(competition_id)
 
@@ -59,17 +56,6 @@ async def manage_competition(callback: CallbackQuery, state: FSMContext):
         await callback.answer("Competition not found", show_alert=True)
         return
 
-    text = f"""
-🏆 {competition.name}
-
-Статусы открытия регистрации:
-Player: {'✅ Открыто' if competition.player_entry_open else '❌ Закрыто'}
-Voter: {'✅ Открыто' if competition.voter_entry_open else '❌ Закрыто'}
-Viewer: {'✅ Открыто' if competition.viewer_entry_open else '❌ Закрыто'}
-Adviser: {'✅ Открыто' if competition.adviser_entry_open else '❌ Закрыто'}
-
-Нажмите на роль чтобы переключить статус:
-    """.strip()
 
     await callback.message.edit_text(
         text,
@@ -82,7 +68,6 @@ Adviser: {'✅ Открыто' if competition.adviser_entry_open else '❌ За�
 @admin_competitions_router.callback_query(F.data.startswith("toggle_entry_"))
 @admin_only
 async def toggle_role_entry(callback: CallbackQuery, state: FSMContext):
-    """Toggle role entry status for competition."""
     parts = callback.data.split("_")
     competition_id = int(parts[2])
     role = parts[3]
@@ -97,4 +82,3 @@ async def toggle_role_entry(callback: CallbackQuery, state: FSMContext):
     await callback.answer(f"{role.upper()}: {status_text}")
 
     await manage_competition(callback, state)
-

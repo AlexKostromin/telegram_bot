@@ -14,46 +14,14 @@ from .channels import NotificationChannel, DeliveryResult
 logger = logging.getLogger(__name__)
 
 class EmailChannel(NotificationChannel):
-    """
-    Notification channel for sending emails via SMTP.
-
-    Features:
-    - HTML and plain text email support
-    - Automatic configuration validation
-    - Detailed error handling
-    - MIME message construction
-    - TLS/SSL support
-
-    Example:
-        >>> channel = EmailChannel()
-        >>> if await channel.validate_configuration():
-        ...     result = await channel.send(
-        ...         recipient={'email': 'user@example.com', 'first_name': 'John'},
-        ...         subject='Hello!',
-        ...         body='<b>Welcome</b> to our service'
-        ...     )
-        ...     print(result.status)
-    """
 
     def __init__(self):
-        """Initialize Email channel with SMTP configuration."""
         self.config = SMTPConfig()
 
     def get_channel_name(self) -> str:
-        """Get channel name."""
         return "Email"
 
     async def validate_configuration(self) -> bool:
-        """
-        Check if SMTP is properly configured.
-
-        Returns:
-            True if all required settings present, False otherwise
-
-        Example:
-            >>> if await email_channel.validate_configuration():
-            ...     print("Email ready to send")
-        """
         if not self.config.is_configured():
             logger.warning(
                 "❌ Email: SMTP not configured. "
@@ -70,21 +38,6 @@ class EmailChannel(NotificationChannel):
         return True
 
     async def validate_recipient(self, recipient: Dict[str, Any]) -> bool:
-        """
-        Check if recipient has valid email address.
-
-        Args:
-            recipient: Recipient dictionary with 'email' key
-
-        Returns:
-            True if has valid email, False otherwise
-
-        Example:
-            >>> await email_channel.validate_recipient({'email': 'user@example.com'})
-            True
-            >>> await email_channel.validate_recipient({'telegram_id': 123})
-            False
-        """
         email_addr = recipient.get("email", "")
         if not email_addr:
             return False
@@ -92,21 +45,6 @@ class EmailChannel(NotificationChannel):
 
     @staticmethod
     def _is_valid_email(email_addr: str) -> bool:
-        """
-        Validate email address format.
-
-        Args:
-            email_addr: Email address to validate
-
-        Returns:
-            True if valid format, False otherwise
-
-        Example:
-            >>> EmailChannel._is_valid_email('user@example.com')
-            True
-            >>> EmailChannel._is_valid_email('invalid-email')
-            False
-        """
         pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         return bool(re.match(pattern, email_addr))
 
@@ -116,26 +54,6 @@ class EmailChannel(NotificationChannel):
         subject: str,
         body: str
     ) -> MIMEMultipart:
-        """
-        Create MIME email message.
-
-        Args:
-            recipient_email: Recipient's email address
-            subject: Email subject
-            body: Email body (HTML or plain text)
-
-        Returns:
-            MIMEMultipart message ready to send
-
-        Example:
-            >>> msg = channel._create_message(
-            ...     'user@example.com',
-            ...     'Welcome!',
-            ...     '<p>Hello!</p>'
-            ... )
-            >>> msg['Subject']
-            'Welcome!'
-        """
 
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
@@ -162,26 +80,6 @@ class EmailChannel(NotificationChannel):
         subject: str,
         body: str
     ) -> DeliveryResult:
-        """
-        Send email message to recipient.
-
-        Args:
-            recipient: Recipient dict with 'email' key
-            subject: Email subject
-            body: Email body (HTML or plain text)
-
-        Returns:
-            DeliveryResult with status and error details if any
-
-        Example:
-            >>> result = await email_channel.send(
-            ...     {'email': 'user@example.com', 'first_name': 'John'},
-            ...     'Welcome to USN',
-            ...     '<b>Hello John!</b>'
-            ... )
-            >>> print(result.status)
-            sent
-        """
 
         if not await self.validate_recipient(recipient):
             return DeliveryResult(
@@ -260,16 +158,6 @@ class EmailChannel(NotificationChannel):
             )
 
     async def test_connection(self) -> bool:
-        """
-        Test SMTP connection without sending.
-
-        Returns:
-            True if can connect to SMTP server, False otherwise
-
-        Example:
-            >>> if await email_channel.test_connection():
-            ...     print("SMTP server responding")
-        """
         try:
             if not await self.validate_configuration():
                 return False
@@ -302,7 +190,5 @@ class EmailChannel(NotificationChannel):
             return False
 
     def __repr__(self) -> str:
-        """Detailed representation."""
         server = f"{self.config.SMTP_HOST}:{self.config.SMTP_PORT}" if self.config.is_configured() else "unconfigured"
         return f"<EmailChannel smtp={server}>"
-

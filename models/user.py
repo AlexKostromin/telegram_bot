@@ -6,7 +6,6 @@ from datetime import datetime, date
 Base = declarative_base()
 
 class UserModel(Base):
-    """Модель пользователя в системе."""
 
     __tablename__: str = "users"
 
@@ -32,10 +31,7 @@ class UserModel(Base):
     updated_at: datetime = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     def __str__(self) -> str:
-        """Строковое представление пользователя."""
         return f"{self.first_name} {self.last_name} ({self.telegram_username})"
 
     def get_display_name(self) -> str:
-        """Получить отображаемое имя пользователя."""
         return f"{self.first_name} {self.last_name}"
-

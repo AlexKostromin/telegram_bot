@@ -15,7 +15,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 async def init_sample_data() -> None:
-    """Добавить примеры соревнований в БД если их еще нет."""
     logger.info("=== STARTING init_sample_data ===")
     try:
         async with db_manager.get_session() as session:
@@ -79,7 +78,6 @@ async def init_sample_data() -> None:
         logger.error(f"Error in init_sample_data: {e}", exc_info=True)
 
 async def main() -> None:
-    """Главная функция для запуска бота."""
     logger.info("Инициализация Telegram бота USN...")
 
     try:
@@ -111,4 +109,3 @@ async def main() -> None:
 
 if __name__ == "__main__":
     asyncio.run(main())
-

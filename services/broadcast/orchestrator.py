@@ -16,39 +16,12 @@ from .recipient_filter import RecipientFilter
 logger = logging.getLogger(__name__)
 
 class BroadcastOrchestrator:
-    """
-    Orchestrator for executing broadcast campaigns.
-
-    Coordinates all components of the broadcast system:
-    - Loads broadcast configuration and template
-    - Filters target recipients
-    - Renders templates for each recipient
-    - Sends via notification channels (Telegram, Email)
-    - Tracks delivery status
-    - Provides statistics
-
-    Uses Facade pattern to hide complexity from caller.
-
-    Example:
-        >>> from aiogram import Bot
-        >>> bot = Bot(token='YOUR_TOKEN')
-        >>> orchestrator = BroadcastOrchestrator(session, bot)
-        >>> stats = await orchestrator.execute_broadcast(broadcast_id=1)
-        >>> print(f"Sent: {stats['sent']}, Failed: {stats['failed']}")
-    """
 
     def __init__(
         self,
         session: AsyncSession,
         bot=None,
     ):
-        """
-        Initialize orchestrator.
-
-        Args:
-            session: SQLAlchemy AsyncSession
-            bot: aiogram Bot instance for Telegram sending
-        """
         self.session = session
         self.bot = bot
         self.renderer = TemplateRenderer()
@@ -66,22 +39,6 @@ class BroadcastOrchestrator:
         broadcast_id: int,
         sample_size: int = 5
     ) -> Dict[str, Any]:
-        """
-        Preview broadcast without sending.
-
-        Args:
-            broadcast_id: ID of broadcast to preview
-            sample_size: Number of sample recipients to show
-
-        Returns:
-            Dictionary with broadcast info and sample renderings
-
-        Example:
-            >>> preview = await orchestrator.preview_broadcast(broadcast_id=1)
-            >>> print(f"Targeting {preview['total_recipients']} users")
-            >>> for sample in preview['samples']:
-            ...     print(sample['rendered_subject'])
-        """
         try:
 
             broadcast = await self._load_broadcast(broadcast_id)
@@ -132,30 +89,6 @@ class BroadcastOrchestrator:
         broadcast_id: int,
         dry_run: bool = False
     ) -> Dict[str, Any]:
-        """
-        Execute broadcast campaign.
-
-        Main workflow:
-        1. Load broadcast and template
-        2. Get recipients matching filters
-        3. Create BroadcastRecipient records
-        4. Render templates for each recipient
-        5. Send via enabled channels (parallel)
-        6. Update delivery statuses
-        7. Return statistics
-
-        Args:
-            broadcast_id: ID of broadcast to execute
-            dry_run: If True, don't actually send (just preview)
-
-        Returns:
-            Dictionary with execution statistics
-
-        Example:
-            >>> stats = await orchestrator.execute_broadcast(broadcast_id=1)
-            >>> print(f"Sent {stats['sent']} messages")
-            >>> print(f"Failed {stats['failed']} messages")
-        """
         try:
 
             broadcast = await self._load_broadcast(broadcast_id)
@@ -253,21 +186,6 @@ class BroadcastOrchestrator:
         recipient: Dict[str, Any],
         dry_run: bool = False
     ) -> Dict[str, Any]:
-        """
-        Send message to single recipient via enabled channels.
-
-        Sends in parallel to Telegram and Email (if enabled).
-        Updates BroadcastRecipient records with delivery status.
-
-        Args:
-            broadcast: Broadcast object
-            template: MessageTemplate object
-            recipient: Recipient dictionary
-            dry_run: If True, don't actually send
-
-        Returns:
-            Result dictionary with delivery status for each channel
-        """
 
         try:
             subject = self.renderer.render(template.subject, recipient)
@@ -324,7 +242,6 @@ class BroadcastOrchestrator:
         body: str,
         broadcast_id: int
     ) -> Dict[str, Any]:
-        """Send via Telegram channel and update database."""
         try:
             channel = self.channels.get('telegram')
             if not channel:
@@ -370,7 +287,6 @@ class BroadcastOrchestrator:
         body: str,
         broadcast_id: int
     ) -> Dict[str, Any]:
-        """Send via Email channel and update database."""
         try:
             channel = self.channels.get('email')
             if not channel:
@@ -409,11 +325,9 @@ class BroadcastOrchestrator:
             }
 
     def _channel_enabled(self, channel_name: str) -> bool:
-        """Check if channel is available."""
         return channel_name in self.channels
 
     async def _load_broadcast(self, broadcast_id: int) -> Optional[Broadcast]:
-        """Load broadcast with template from database."""
         result = await self.session.execute(
             select(Broadcast).where(Broadcast.id == broadcast_id)
         )
@@ -428,7 +342,6 @@ class BroadcastOrchestrator:
         message_id: Optional[str] = None,
         error: Optional[str] = None
     ):
-        """Update BroadcastRecipient delivery status."""
         try:
             result = await self.session.execute(
                 select(BroadcastRecipient).where(
@@ -455,4 +368,3 @@ class BroadcastOrchestrator:
 
         except Exception as e:
             logger.error(f"❌ Failed to update recipient status: {e}")
-

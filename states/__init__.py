@@ -3,4 +3,3 @@ from .contact import ContactStates
 from .admin import AdminStates
 
 __all__ = ["RegistrationStates", "ContactStates", "AdminStates"]
-

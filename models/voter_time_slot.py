@@ -3,7 +3,6 @@ from sqlalchemy import Column, Integer, DateTime, ForeignKey
 from models.user import Base
 
 class VoterTimeSlotModel(Base):
-    """Model for voter to time slot assignment."""
 
     __tablename__: str = "voter_time_slots"
 
@@ -13,6 +12,4 @@ class VoterTimeSlotModel(Base):
     created_at: datetime = Column(DateTime, default=datetime.utcnow)
 
     def __str__(self) -> str:
-        """String representation."""
         return f"Registration {self.registration_id} -> Slot {self.time_slot_id}"
-

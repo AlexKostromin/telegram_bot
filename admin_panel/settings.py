@@ -111,4 +111,3 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 ADMIN_SITE_HEADER = "USN Telegram Bot - Панель управления"
 ADMIN_SITE_TITLE = "USN Admin"
 ADMIN_SITE_URL = None
-

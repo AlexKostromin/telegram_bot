@@ -5,11 +5,9 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from messages import BotMessages
 
 class InlineKeyboards:
-    """Класс с инлайн-клавиатурами."""
 
     @staticmethod
     def yes_no_keyboard() -> InlineKeyboardMarkup:
-        """Клавиатура Да/Нет."""
         builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
         builder.button(text=BotMessages.BUTTON_YES, callback_data="yes")
         builder.button(text=BotMessages.BUTTON_NO, callback_data="no")
@@ -18,7 +16,6 @@ class InlineKeyboards:
 
     @staticmethod
     def main_menu_keyboard() -> InlineKeyboardMarkup:
-        """Главное меню."""
         builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
         builder.button(
             text=BotMessages.BUTTON_CONTACT_TEAM,
@@ -33,7 +30,6 @@ class InlineKeyboards:
 
     @staticmethod
     def competitions_keyboard(competitions: List[Dict[str, Any]]) -> InlineKeyboardMarkup:
-        """Клавиатура с выбором соревнований."""
         builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
         for comp in competitions:
             button_text: str = BotMessages.format_competition_info(
@@ -49,7 +45,6 @@ class InlineKeyboards:
 
     @staticmethod
     def roles_keyboard(available_roles: List[str]) -> InlineKeyboardMarkup:
-        """Клавиатура с выбором роли."""
         builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
         role_map: Dict[str, str] = {
             "player": BotMessages.ROLE_PLAYER,
@@ -67,7 +62,6 @@ class InlineKeyboards:
 
     @staticmethod
     def edit_fields_keyboard(available_fields: List[str]) -> InlineKeyboardMarkup:
-        """Клавиатура с выбором поля для редактирования."""
         builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
         for field in available_fields:
             field_display: str = BotMessages.get_edit_field_name(field)
@@ -84,7 +78,6 @@ class InlineKeyboards:
 
     @staticmethod
     def back_to_menu_keyboard() -> InlineKeyboardMarkup:
-        """Клавиатура с кнопкой возврата в меню."""
         builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
         builder.button(
             text=BotMessages.BUTTON_BACK_TO_MENU,
@@ -95,7 +88,6 @@ class InlineKeyboards:
 
     @staticmethod
     def back_keyboard() -> InlineKeyboardMarkup:
-        """Клавиатура с кнопкой назад."""
         builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
         builder.button(
             text=BotMessages.BUTTON_BACK,
@@ -106,7 +98,6 @@ class InlineKeyboards:
 
     @staticmethod
     def skip_keyboard() -> InlineKeyboardMarkup:
-        """Клавиатура для пропуска опционального поля."""
         builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
         builder.button(
             text="⏩ Пропустить",
@@ -117,7 +108,6 @@ class InlineKeyboards:
 
     @staticmethod
     def time_slots_keyboard(time_slots: List[Dict[str, Any]], selected_slots: Optional[List[int]] = None) -> InlineKeyboardMarkup:
-        """Клавиатура для выбора временных слотов (multi-select)."""
         if selected_slots is None:
             selected_slots = []
 
@@ -147,7 +137,6 @@ class InlineKeyboards:
 
     @staticmethod
     def jury_panels_keyboard(panels: List[Any]) -> InlineKeyboardMarkup:
-        """Клавиатура для выбора судейской коллегии."""
         builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
 
         for panel in panels:
@@ -159,4 +148,3 @@ class InlineKeyboards:
 
         builder.adjust(1)
         return builder.as_markup()
-

@@ -15,13 +15,6 @@ competition_select_router = Router()
 
 @competition_select_router.callback_query(F.data == "register")
 async def register_callback_handler(query: CallbackQuery, state: FSMContext) -> None:
-    """
-    Обработчик нажатия на кнопку "Зарегистрироваться" в главном меню.
-
-    Args:
-        query: Объект callback query
-        state: Контекст FSM
-    """
     print(f"DEBUG: register callback received")
 
     competitions: List[Dict[str, Any]] = await db_manager.get_active_competitions()
@@ -63,13 +56,6 @@ async def register_callback_handler(query: CallbackQuery, state: FSMContext) -> 
 
 @competition_select_router.message(StateFilter(RegistrationStates.waiting_for_competition_select))
 async def competition_select_handler(message: Message, state: FSMContext) -> None:
-    """
-    Обработчик начала выбора соревнования.
-
-    Args:
-        message: Объект сообщения
-        state: Контекст FSM
-    """
 
     competitions: List[Dict[str, Any]] = await db_manager.get_active_competitions()
 
@@ -106,13 +92,6 @@ async def competition_select_handler(message: Message, state: FSMContext) -> Non
 
 @competition_select_router.callback_query(F.data.startswith("competition_"))
 async def competition_select_callback(query: CallbackQuery, state: FSMContext) -> None:
-    """
-    Обработчик выбора соревнования из списка.
-
-    Args:
-        query: Объект callback query
-        state: Контекст FSM
-    """
 
     competition_id: int = int(query.data.split("_")[1])
 
@@ -137,4 +116,3 @@ async def competition_select_callback(query: CallbackQuery, state: FSMContext) -
         reply_markup=InlineKeyboards.roles_keyboard(available_roles),
     )
     await query.answer()
-

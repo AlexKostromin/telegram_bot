@@ -3,7 +3,6 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 def admin_main_menu_keyboard() -> InlineKeyboardMarkup:
-    """Main admin menu keyboard."""
     builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
     builder.button(text="📬 Заявки", callback_data="admin_applications")
     builder.button(text="🏆 Соревнования", callback_data="admin_competitions")
@@ -13,7 +12,6 @@ def admin_main_menu_keyboard() -> InlineKeyboardMarkup:
     return builder.as_markup()
 
 def applications_list_keyboard(applications: List[Any]) -> InlineKeyboardMarkup:
-    """Keyboard with list of applications."""
     builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
 
     for app in applications:
@@ -28,7 +26,6 @@ def applications_list_keyboard(applications: List[Any]) -> InlineKeyboardMarkup:
     return builder.as_markup()
 
 def application_actions_keyboard(registration_id: int, status: str) -> InlineKeyboardMarkup:
-    """Keyboard with actions for application."""
     builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
 
     if status == "pending":
@@ -42,7 +39,6 @@ def application_actions_keyboard(registration_id: int, status: str) -> InlineKey
     return builder.as_markup()
 
 def competition_management_keyboard(competition: Any) -> InlineKeyboardMarkup:
-    """Keyboard for competition management."""
     builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
 
     player_status: str = "✅" if competition.player_entry_open else "❌"
@@ -73,7 +69,6 @@ def competition_management_keyboard(competition: Any) -> InlineKeyboardMarkup:
     return builder.as_markup()
 
 def time_slot_management_keyboard(competition_id: int) -> InlineKeyboardMarkup:
-    """Keyboard for time slot management."""
     builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
     builder.button(text="➕ Добавить слот", callback_data="create_time_slot")
     builder.button(text="📋 Список слотов", callback_data=f"list_slots_{competition_id}")
@@ -82,7 +77,6 @@ def time_slot_management_keyboard(competition_id: int) -> InlineKeyboardMarkup:
     return builder.as_markup()
 
 def confirm_action_keyboard(action: str, data: str) -> InlineKeyboardMarkup:
-    """Keyboard for action confirmation."""
     builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
     builder.button(text="✅ Да", callback_data=f"confirm_{action}_{data}")
     builder.button(text="❌ Нет", callback_data="admin_menu")
@@ -90,9 +84,7 @@ def confirm_action_keyboard(action: str, data: str) -> InlineKeyboardMarkup:
     return builder.as_markup()
 
 def back_button() -> InlineKeyboardMarkup:
-    """Simple back button."""
     builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
     builder.button(text="⬅️ Назад", callback_data="admin_menu")
     builder.adjust(1)
     return builder.as_markup()
-

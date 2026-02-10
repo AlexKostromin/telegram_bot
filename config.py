@@ -9,7 +9,6 @@ BOT_TOKEN: str = os.getenv("BOT_TOKEN", "YOUR_BOT_TOKEN_HERE")
 DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./bot_database.db")
 
 def get_database_type() -> str:
-    """Определить тип БД из DATABASE_URL."""
     if DATABASE_URL.startswith("postgresql"):
         return "postgresql"
     elif DATABASE_URL.startswith("sqlite"):
@@ -27,4 +26,3 @@ LOGGING_LEVEL: str = os.getenv("LOGGING_LEVEL", "INFO")
 
 ADMIN_IDS_STR: str = os.getenv("ADMIN_IDS", "")
 ADMIN_IDS: List[int] = [int(id.strip()) for id in ADMIN_IDS_STR.split(",") if id.strip()]
-

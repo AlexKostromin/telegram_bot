@@ -3,7 +3,6 @@ from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
 from models.user import Base
 
 class JuryPanelModel(Base):
-    """Model for jury panels in competitions."""
 
     __tablename__: str = "jury_panels"
 
@@ -15,6 +14,4 @@ class JuryPanelModel(Base):
     created_at: datetime = Column(DateTime, default=datetime.utcnow)
 
     def __str__(self) -> str:
-        """String representation of jury panel."""
         return f"{self.panel_name} (max {self.max_voters})"
-

@@ -1,7 +1,6 @@
 from aiogram.fsm.state import State, StatesGroup
 
 class AdminStates(StatesGroup):
-    """States for admin panel."""
 
     admin_main_menu = State()
 
@@ -23,4 +22,3 @@ class AdminStates(StatesGroup):
     creating_jury_panel = State()
     waiting_for_panel_name = State()
     waiting_for_panel_max_voters = State()
-

@@ -5,13 +5,11 @@ import enum
 from models.user import Base
 
 class RegistrationStatus(str, enum.Enum):
-    """Status of registration."""
     PENDING: str = "pending"
     APPROVED: str = "approved"
     REJECTED: str = "rejected"
 
 class RegistrationModel(Base):
-    """Модель регистрации пользователя на соревнование."""
 
     __tablename__: str = "registrations"
 
@@ -28,6 +26,4 @@ class RegistrationModel(Base):
     updated_at: datetime = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     def __str__(self) -> str:
-        """Строковое представление регистрации."""
         return f"User {self.telegram_id} - Competition {self.competition_id} ({self.role})"
-

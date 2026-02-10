@@ -8,7 +8,6 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 class SMTPConfig:
-    """SMTP configuration for email sending."""
 
     SMTP_HOST: str = os.getenv("SMTP_HOST", "smtp.mailtrap.io")
     SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
@@ -28,15 +27,10 @@ class SMTPConfig:
 
     @classmethod
     def get_from_address(cls) -> str:
-        """Get the 'from' address for email notifications.
-
-        Uses SUPPORT_EMAIL if configured, otherwise falls back to default.
-        """
         return cls.SUPPORT_EMAIL or "noreply@example.com"
 
     @classmethod
     def is_configured(cls) -> bool:
-        """Check if SMTP is configured with all required settings."""
         return bool(
             cls.SMTP_HOST
             and cls.SMTP_USERNAME
@@ -46,12 +40,10 @@ class SMTPConfig:
 
     @classmethod
     def is_support_configured(cls) -> bool:
-        """Check if support email is configured."""
         return bool(cls.SUPPORT_EMAIL or cls.SUPPORT_TELEGRAM_ID)
 
     @classmethod
     def validate(cls) -> bool:
-        """Validate SMTP configuration."""
         if not cls.is_configured():
             logger.warning(
                 "⚠️  SMTP not fully configured. Email notifications will be disabled. "
@@ -67,23 +59,9 @@ class SMTPConfig:
 
     @classmethod
     def get_summary(cls) -> str:
-        """Get configuration summary for logging."""
         status = "✅ Configured" if cls.is_configured() else "⚠️  Not configured"
         support_status = "✅ Configured" if cls.is_support_configured() else "❌ Not configured"
 
-        return f"""
-Email Configuration Summary:
-├─ Status: {status}
-├─ SMTP Host: {cls.SMTP_HOST}
-├─ SMTP Port: {cls.SMTP_PORT}
-├─ Use TLS: {cls.SMTP_USE_TLS}
-├─ Primary Email (for sending & support): {cls.SUPPORT_EMAIL or 'Not set'}
-├─ Email Display Name: {cls.EMAIL_FROM_NAME}
-└─ Support: {support_status}
-   ├─ Email: {cls.SUPPORT_EMAIL or 'Not set'}
-   └─ Telegram ID: {cls.SUPPORT_TELEGRAM_ID or 'Not set'}
-        """
 
 if __name__ != "__main__":
     SMTPConfig.validate()
-

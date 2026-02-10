@@ -10,7 +10,6 @@ if not BOT_TOKEN:
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./bot_database.db")
 
 def get_database_type() -> str:
-    """Определить тип БД из DATABASE_URL."""
     if DATABASE_URL.startswith("postgresql"):
         return "postgresql"
     elif DATABASE_URL.startswith("sqlite"):
@@ -30,4 +29,3 @@ ADMIN_IDS = list(map(int, os.getenv("ADMIN_IDS", "").split(","))) if os.getenv("
 
 MESSAGE_CONTACT_EMAIL = "contact@usn.example.com"
 MESSAGE_CONTACT_PHONE = "+7 (XXX) XXX-XX-XX"
-

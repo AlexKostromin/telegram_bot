@@ -4,7 +4,6 @@ from sqlalchemy import Column, Integer, Date, Time, Boolean, DateTime, ForeignKe
 from models.user import Base
 
 class TimeSlotModel(Base):
-    """Model for time slots in competitions."""
 
     __tablename__: str = "time_slots"
 
@@ -18,6 +17,4 @@ class TimeSlotModel(Base):
     created_at: datetime = Column(DateTime, default=datetime.utcnow)
 
     def __str__(self) -> str:
-        """String representation of time slot."""
         return f"{self.slot_day} {self.start_time}-{self.end_time}"
-

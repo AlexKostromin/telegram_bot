@@ -10,13 +10,6 @@ start_router = Router()
 
 @start_router.message(Command("start"))
 async def start_handler(message: Message, state: FSMContext) -> None:
-    """
-    Обработчик команды /start.
-
-    Args:
-        message: Объект сообщения
-        state: Контекст FSM
-    """
 
     await state.clear()
 
@@ -27,12 +20,6 @@ async def start_handler(message: Message, state: FSMContext) -> None:
 
 @start_router.message(Command("help"))
 async def help_handler(message: Message) -> None:
-    """
-    Обработчик команды /help.
-
-    Args:
-        message: Объект сообщения
-    """
     help_text = (
         "🤖 **Справка по использованию бота USN**\n\n"
         "**Доступные команды:**\n"
@@ -47,4 +34,3 @@ async def help_handler(message: Message) -> None:
         "• При возникновении вопросов свяжитесь с командой USN\n"
     )
     await message.answer(help_text)
-

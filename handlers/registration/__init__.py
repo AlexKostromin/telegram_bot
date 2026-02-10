@@ -13,4 +13,3 @@ __all__ = [
     "voter_slots_router",
     "confirmation_router",
 ]
-

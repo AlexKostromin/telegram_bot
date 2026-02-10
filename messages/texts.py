@@ -1,5 +1,4 @@
 class BotMessages:
-    """Класс со всеми сообщениями бота."""
 
     MAIN_MENU = "Добро пожаловать в Telegram бот USN! 🎯\n\nВыберите, что вас интересует:"
     MAIN_MENU_START = (
@@ -98,12 +97,10 @@ class BotMessages:
 
     @staticmethod
     def format_competition_info(competition_name: str, competition_type: str) -> str:
-        """Форматирование информации о соревновании."""
         return f"📍 {competition_name} ({competition_type})"
 
     @staticmethod
     def get_edit_field_name(field_key: str) -> str:
-        """Получить читаемое название поля для редактирования."""
         field_names = {
             "phone": "Телефон",
             "email": "Email",
@@ -116,4 +113,3 @@ class BotMessages:
             "presentation": "Как вас представить",
         }
         return field_names.get(field_key, field_key)
-

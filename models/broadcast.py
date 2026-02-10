@@ -7,7 +7,6 @@ from enum import Enum as PyEnum
 from models.user import Base
 
 class BroadcastStatus(PyEnum):
-    """Статусы рассылки."""
     draft = "draft"
     scheduled = "scheduled"
     in_progress = "in_progress"
@@ -15,7 +14,6 @@ class BroadcastStatus(PyEnum):
     failed = "failed"
 
 class DeliveryStatus(PyEnum):
-    """Статусы доставки сообщения."""
     pending = "pending"
     sent = "sent"
     delivered = "delivered"
@@ -23,7 +21,6 @@ class DeliveryStatus(PyEnum):
     blocked = "blocked"
 
 class MessageTemplate(Base):
-    """Шаблон сообщения для рассылки."""
 
     __tablename__: str = "message_templates"
     __allow_unmapped__ = True
@@ -47,15 +44,12 @@ class MessageTemplate(Base):
     broadcasts = relationship("Broadcast", back_populates="template")
 
     def __str__(self) -> str:
-        """Строковое представление шаблона."""
         return f"MessageTemplate({self.name})"
 
     def __repr__(self) -> str:
-        """Подробное представление шаблона."""
         return f"<MessageTemplate id={self.id} name='{self.name}' is_active={self.is_active}>"
 
 class Broadcast(Base):
-    """Рассылка сообщений группе пользователей."""
 
     __tablename__: str = "broadcasts"
     __allow_unmapped__ = True
@@ -89,28 +83,23 @@ class Broadcast(Base):
     recipients = relationship("BroadcastRecipient", back_populates="broadcast", cascade="all, delete-orphan")
 
     def __str__(self) -> str:
-        """Строковое представление рассылки."""
         return f"Broadcast({self.name}, status={self.status.value})"
 
     def __repr__(self) -> str:
-        """Подробное представление рассылки."""
         return (
             f"<Broadcast id={self.id} name='{self.name}' "
             f"status={self.status.value} template_id={self.template_id}>"
         )
 
     def get_progress_percent(self) -> float:
-        """Получить процент прогресса отправки (0-100)."""
         if self.total_recipients == 0:
             return 0.0
         return min(100.0, (self.sent_count / self.total_recipients) * 100)
 
     def is_completed(self) -> bool:
-        """Проверить, завершена ли рассылка."""
         return self.status in (BroadcastStatus.completed, BroadcastStatus.failed)
 
 class BroadcastRecipient(Base):
-    """Информация о доставке сообщения конкретному пользователю."""
 
     __tablename__: str = "broadcast_recipients"
     __allow_unmapped__ = True
@@ -148,11 +137,9 @@ class BroadcastRecipient(Base):
     updated_at: datetime = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     def __str__(self) -> str:
-        """Строковое представление получателя."""
         return f"BroadcastRecipient(user_id={self.user_id}, broadcast_id={self.broadcast_id})"
 
     def __repr__(self) -> str:
-        """Подробное представление получателя."""
         return (
             f"<BroadcastRecipient id={self.id} broadcast_id={self.broadcast_id} "
             f"user_id={self.user_id} tg_status={self.telegram_status.value} "
@@ -160,16 +147,13 @@ class BroadcastRecipient(Base):
         )
 
     def is_sent(self) -> bool:
-        """Проверить, было ли отправлено хотя бы на один канал."""
         return (
             self.telegram_status in (DeliveryStatus.sent, DeliveryStatus.delivered) or
             self.email_status in (DeliveryStatus.sent, DeliveryStatus.delivered)
         )
 
     def has_errors(self) -> bool:
-        """Проверить, были ли ошибки при отправке."""
         return (
             self.telegram_status == DeliveryStatus.failed or
             self.email_status == DeliveryStatus.failed
         )
-

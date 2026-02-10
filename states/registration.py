@@ -1,7 +1,6 @@
 from aiogram.fsm.state import State, StatesGroup
 
 class RegistrationStates(StatesGroup):
-    """Состояния процесса регистрации."""
 
     waiting_for_competition_select = State()
 
@@ -32,4 +31,3 @@ class RegistrationStates(StatesGroup):
     waiting_for_final_confirmation = State()
 
     registration_complete = State()
-

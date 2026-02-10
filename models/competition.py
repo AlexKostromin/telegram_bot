@@ -4,7 +4,6 @@ from datetime import datetime
 from models.user import Base
 
 class CompetitionModel(Base):
-    """Модель соревнования в системе."""
 
     __tablename__: str = "competitions"
 
@@ -26,11 +25,9 @@ class CompetitionModel(Base):
     updated_at: datetime = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     def __str__(self) -> str:
-        """Строковое представление соревнования."""
         return f"{self.name} ({self.competition_type})"
 
     def is_role_open(self, role: str) -> bool:
-        """Check if registration is open for specific role."""
         role_flags: Dict[str, bool] = {
             "player": self.player_entry_open,
             "voter": self.voter_entry_open,
@@ -38,4 +35,3 @@ class CompetitionModel(Base):
             "adviser": self.adviser_entry_open,
         }
         return role_flags.get(role, False)
-

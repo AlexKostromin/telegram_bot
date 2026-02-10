@@ -12,4 +12,3 @@ urlpatterns = [
     path('api/stats/', views.bot_stats_api, name='stats_api'),
     path('api/registration/<int:registration_id>/', views.registration_detail, name='registration_detail'),
 ]
-

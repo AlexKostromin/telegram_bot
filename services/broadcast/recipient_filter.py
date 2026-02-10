@@ -8,36 +8,8 @@ from models import UserModel, RegistrationModel, CompetitionModel, RegistrationS
 logger = logging.getLogger(__name__)
 
 class RecipientFilter:
-    """
-    Filter users for broadcast targeting.
-
-    Features:
-    - Filter by competition ID
-    - Filter by registration status (pending, approved, rejected)
-    - Filter by user role (player, voter, viewer, adviser)
-    - Filter by geographic location (country, city)
-    - Filter by email availability
-    - Combined filtering with AND logic
-    - Pagination support
-
-    Example:
-        >>> filter = RecipientFilter(session)
-        >>> recipients = await filter.get_recipients(
-        ...     competition_ids=[1, 2],
-        ...     roles=['player'],
-        ...     statuses=['approved'],
-        ...     has_email=True
-        ... )
-        >>> print(f"Found {len(recipients)} recipients")
-    """
 
     def __init__(self, session: AsyncSession):
-        """
-        Initialize filter with database session.
-
-        Args:
-            session: SQLAlchemy AsyncSession for database queries
-        """
         self.session = session
 
     async def get_recipients(
@@ -51,30 +23,6 @@ class RecipientFilter:
         limit: Optional[int] = None,
         offset: int = 0
     ) -> List[Dict[str, Any]]:
-        """
-        Get users matching filter criteria.
-
-        Args:
-            competition_ids: List of competition IDs to filter by
-            roles: List of roles (player, voter, viewer, adviser)
-            statuses: List of registration statuses (pending, approved, rejected)
-            countries: List of countries to filter by
-            cities: List of cities to filter by
-            has_email: If True, only users with email
-            limit: Maximum number of results
-            offset: Number of results to skip (for pagination)
-
-        Returns:
-            List of user dictionaries with telegram_id, email, first_name, etc.
-
-        Example:
-            >>> recipients = await filter.get_recipients(
-            ...     competition_ids=[1],
-            ...     roles=['player', 'voter'],
-            ...     statuses=['approved'],
-            ...     has_email=True
-            ... )
-        """
         try:
 
             query = select(
@@ -176,23 +124,6 @@ class RecipientFilter:
         cities: Optional[List[str]] = None,
         has_email: bool = False,
     ) -> int:
-        """
-        Count users matching filter criteria.
-
-        Args:
-            Same as get_recipients()
-
-        Returns:
-            Number of users matching criteria
-
-        Example:
-            >>> count = await filter.count_recipients(
-            ...     competition_ids=[1],
-            ...     roles=['player'],
-            ...     statuses=['approved']
-            ... )
-            >>> print(f"{count} users will receive broadcast")
-        """
         try:
 
             from sqlalchemy import func
@@ -247,19 +178,6 @@ class RecipientFilter:
             return 0
 
     async def get_available_filters(self) -> Dict[str, Any]:
-        """
-        Get list of available filter options from database.
-
-        Returns all distinct values for filterable fields.
-
-        Returns:
-            Dictionary with available filter options
-
-        Example:
-            >>> filters = await recipient_filter.get_available_filters()
-            >>> print(filters['countries'])
-            ['USA', 'Russia', 'Germany', ...]
-        """
         try:
 
             comp_result = await self.session.execute(
@@ -306,19 +224,4 @@ class RecipientFilter:
             }
 
     async def get_sample_recipients(self, limit: int = 5) -> List[Dict[str, Any]]:
-        """
-        Get sample recipients for preview.
-
-        Args:
-            limit: Number of sample recipients
-
-        Returns:
-            List of sample recipients
-
-        Example:
-            >>> samples = await filter.get_sample_recipients(limit=3)
-            >>> for recipient in samples:
-            ...     print(f"{recipient['first_name']} ({recipient['email']})")
-        """
         return await self.get_recipients(limit=limit)
-

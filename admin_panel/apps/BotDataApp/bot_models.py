@@ -15,61 +15,30 @@ except ImportError:
     SQLALCHEMY_AVAILABLE = False
 
 class CompetitionManager(models.Manager):
-    """Manager for Competition model with custom queries."""
 
     def get_active(self):
-        """Get all active competitions."""
         with connection.cursor() as cursor:
             cursor.execute("SELECT * FROM competitions WHERE is_active = 1")
             return cursor.fetchall()
 
     def get_with_stats(self):
-        """Get competitions with registration statistics."""
         with connection.cursor() as cursor:
-            cursor.execute("""
-                SELECT c.id, c.name, c.type, c.is_active, c.created_at,
-                       COUNT(r.id) as registration_count
-                FROM competitions c
-                LEFT JOIN registrations r ON c.id = r.competition_id
-                GROUP BY c.id
-                ORDER BY c.created_at DESC
-            """)
             columns = [col[0] for col in cursor.description]
             return [dict(zip(columns, row)) for row in cursor.fetchall()]
 
 class RegistrationManager(models.Manager):
-    """Manager for Registration model with custom queries."""
 
     def pending(self):
-        """Get pending registrations."""
         with connection.cursor() as cursor:
-            cursor.execute("""
-                SELECT r.*, u.first_name, u.last_name, c.name as competition_name
-                FROM registrations r
-                LEFT JOIN users u ON r.user_id = u.id
-                LEFT JOIN competitions c ON r.competition_id = c.id
-                WHERE r.status = 'pending'
-                ORDER BY r.id DESC
-            """)
             columns = [col[0] for col in cursor.description]
             return [dict(zip(columns, row)) for row in cursor.fetchall()]
 
     def approved(self):
-        """Get approved registrations."""
         with connection.cursor() as cursor:
-            cursor.execute("""
-                SELECT r.*, u.first_name, u.last_name, c.name as competition_name
-                FROM registrations r
-                LEFT JOIN users u ON r.user_id = u.id
-                LEFT JOIN competitions c ON r.competition_id = c.id
-                WHERE r.status = 'approved'
-                ORDER BY r.id DESC
-            """)
             columns = [col[0] for col in cursor.description]
             return [dict(zip(columns, row)) for row in cursor.fetchall()]
 
 class Competition(models.Model):
-    """Django model for Competition."""
 
     id = models.IntegerField(primary_key=True)
     name = models.CharField(max_length=255)
@@ -100,7 +69,6 @@ class Competition(models.Model):
         return f"{self.name} ({self.type})"
 
     def registration_count(self):
-        """Get count of registrations for this competition."""
         with connection.cursor() as cursor:
             cursor.execute(
                 "SELECT COUNT(*) FROM registrations WHERE competition_id = %s",
@@ -109,7 +77,6 @@ class Competition(models.Model):
             return cursor.fetchone()[0]
 
     def approved_count(self):
-        """Get count of approved registrations."""
         with connection.cursor() as cursor:
             cursor.execute(
                 "SELECT COUNT(*) FROM registrations WHERE competition_id = %s AND status = 'approved'",
@@ -118,7 +85,6 @@ class Competition(models.Model):
             return cursor.fetchone()[0]
 
 class User(models.Model):
-    """Django model for User."""
 
     id = models.IntegerField(primary_key=True)
     telegram_id = models.BigIntegerField(unique=True)
@@ -151,7 +117,6 @@ class User(models.Model):
         return f"{self.first_name} {self.last_name}" if self.first_name else f"User #{self.telegram_id}"
 
     def registration_count(self):
-        """Get count of registrations for this user."""
         with connection.cursor() as cursor:
             cursor.execute(
                 "SELECT COUNT(*) FROM registrations WHERE user_id = %s",
@@ -160,7 +125,6 @@ class User(models.Model):
             return cursor.fetchone()[0]
 
 class Registration(models.Model):
-    """Django model for Registration."""
 
     STATUS_CHOICES = [
         ('pending', 'На рассмотрении'),
@@ -200,16 +164,13 @@ class Registration(models.Model):
         return f"Регистрация #{self.id} ({self.get_status_display()})"
 
     def user(self):
-        """Get user object."""
         try:
             return User.objects.get(id=self.user_id)
         except User.DoesNotExist:
             return None
 
     def competition(self):
-        """Get competition object."""
         try:
             return Competition.objects.get(id=self.competition_id)
         except Competition.DoesNotExist:
             return None
-

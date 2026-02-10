@@ -3,11 +3,9 @@ from typing import Optional, List, Any, Dict, Union
 from models import UserModel, CompetitionModel, RegistrationModel
 
 class BaseSerializer:
-    """Базовый класс сериализатора."""
 
     @staticmethod
     def serialize_date(value: Optional[date]) -> Optional[str]:
-        """Преобразовать дату в ISO формат."""
         if not value:
             return None
         if isinstance(value, datetime):
@@ -16,15 +14,12 @@ class BaseSerializer:
 
     @staticmethod
     def serialize_datetime(value: Optional[datetime]) -> Optional[str]:
-        """Преобразовать datetime в ISO формат."""
         return value.isoformat() if value else None
 
 class UserSerializer(BaseSerializer):
-    """Сериализатор для модели User."""
 
     @staticmethod
     def serialize_full(user: UserModel) -> Dict[str, Any]:
-        """Полная сериализация пользователя (для admin панели)."""
         return {
             "id": user.id,
             "telegram_id": user.telegram_id,
@@ -50,7 +45,6 @@ class UserSerializer(BaseSerializer):
 
     @staticmethod
     def serialize_profile(user: UserModel) -> Dict[str, Any]:
-        """Сериализация профиля пользователя (для отображения в боте)."""
         return {
             "id": user.id,
             "first_name": user.first_name,
@@ -70,7 +64,6 @@ class UserSerializer(BaseSerializer):
 
     @staticmethod
     def serialize_public(user: UserModel) -> Dict[str, Any]:
-        """Публичная сериализация (минимальная информация)."""
         return {
             "id": user.id,
             "first_name": user.first_name,
@@ -81,11 +74,9 @@ class UserSerializer(BaseSerializer):
         }
 
 class CompetitionSerializer(BaseSerializer):
-    """Сериализатор для модели Competition."""
 
     @staticmethod
     def serialize_full(competition: CompetitionModel) -> Dict[str, Any]:
-        """Полная сериализация соревнования (для admin панели)."""
         return {
             "id": competition.id,
             "name": competition.name,
@@ -106,7 +97,6 @@ class CompetitionSerializer(BaseSerializer):
 
     @staticmethod
     def serialize_for_selection(competition: CompetitionModel) -> Dict[str, Any]:
-        """Сериализация для выбора соревнования (регистрация)."""
         return {
             "id": competition.id,
             "name": competition.name,
@@ -118,18 +108,15 @@ class CompetitionSerializer(BaseSerializer):
 
     @staticmethod
     def serialize_list(competitions: List[CompetitionModel]) -> List[Dict[str, Any]]:
-        """Сериализация списка соревнований."""
         return [
             CompetitionSerializer.serialize_for_selection(comp)
             for comp in competitions
         ]
 
 class RegistrationSerializer(BaseSerializer):
-    """Сериализатор для модели Registration."""
 
     @staticmethod
     def serialize_full(registration: RegistrationModel) -> Dict[str, Any]:
-        """Полная сериализация заявки."""
         return {
             "id": registration.id,
             "user_id": registration.user_id,
@@ -145,7 +132,6 @@ class RegistrationSerializer(BaseSerializer):
 
     @staticmethod
     def serialize_admin_view(registration: RegistrationModel) -> Dict[str, Any]:
-        """Сериализация заявки для админ панели."""
         return {
             "id": registration.id,
             "user_id": registration.user_id,
@@ -155,4 +141,3 @@ class RegistrationSerializer(BaseSerializer):
             "confirmed_at": BaseSerializer.serialize_datetime(registration.confirmed_at),
             "confirmed_by": registration.confirmed_by,
         }
-

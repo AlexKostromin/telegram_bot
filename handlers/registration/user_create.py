@@ -14,7 +14,6 @@ user_create_router = Router()
 
 @user_create_router.message(StateFilter(RegistrationStates.waiting_for_first_name))
 async def get_first_name(message: Message, state: FSMContext) -> None:
-    """Получить имя пользователя."""
     is_valid: bool
     value: str
     is_valid, value = Validators.validate_name(message.text)
@@ -34,7 +33,6 @@ async def get_first_name(message: Message, state: FSMContext) -> None:
 
 @user_create_router.message(StateFilter(RegistrationStates.waiting_for_last_name))
 async def get_last_name(message: Message, state: FSMContext) -> None:
-    """Получить фамилию пользователя."""
     is_valid, value = Validators.validate_name(message.text)
     if not is_valid:
         await message.answer(
@@ -52,7 +50,6 @@ async def get_last_name(message: Message, state: FSMContext) -> None:
 
 @user_create_router.message(StateFilter(RegistrationStates.waiting_for_phone))
 async def get_phone(message: Message, state: FSMContext) -> None:
-    """Получить телефон пользователя."""
     is_valid, value = Validators.validate_phone(message.text)
     if not is_valid:
         await message.answer(
@@ -77,7 +74,6 @@ async def get_phone(message: Message, state: FSMContext) -> None:
 
 @user_create_router.message(StateFilter(RegistrationStates.waiting_for_email))
 async def get_email(message: Message, state: FSMContext) -> None:
-    """Получить email пользователя."""
     is_valid, value = Validators.validate_email(message.text)
     if not is_valid:
         await message.answer(
@@ -102,7 +98,6 @@ async def get_email(message: Message, state: FSMContext) -> None:
 
 @user_create_router.message(StateFilter(RegistrationStates.waiting_for_country))
 async def get_country(message: Message, state: FSMContext) -> None:
-    """Получить страну пользователя."""
     is_valid, value = Validators.validate_text_field(message.text, min_length=2, max_length=100)
     if not is_valid:
         await message.answer(
@@ -120,7 +115,6 @@ async def get_country(message: Message, state: FSMContext) -> None:
 
 @user_create_router.message(StateFilter(RegistrationStates.waiting_for_city))
 async def get_city(message: Message, state: FSMContext) -> None:
-    """Получить город пользователя."""
     is_valid, value = Validators.validate_text_field(message.text, min_length=2, max_length=100)
     if not is_valid:
         await message.answer(
@@ -138,7 +132,6 @@ async def get_city(message: Message, state: FSMContext) -> None:
 
 @user_create_router.message(StateFilter(RegistrationStates.waiting_for_club))
 async def get_club(message: Message, state: FSMContext) -> None:
-    """Получить клуб/школу пользователя."""
     is_valid, value = Validators.validate_text_field(message.text, min_length=2, max_length=255)
     if not is_valid:
         await message.answer(
@@ -156,7 +149,6 @@ async def get_club(message: Message, state: FSMContext) -> None:
 
 @user_create_router.message(StateFilter(RegistrationStates.waiting_for_certificate_name))
 async def get_certificate_name(message: Message, state: FSMContext) -> None:
-    """Получить имя для сертификата."""
     is_valid, value = Validators.validate_certificate_name(message.text)
     if not is_valid:
         await message.answer(
@@ -185,7 +177,6 @@ async def get_certificate_name(message: Message, state: FSMContext) -> None:
 
 @user_create_router.message(StateFilter(RegistrationStates.waiting_for_company))
 async def get_company(message: Message, state: FSMContext) -> None:
-    """Получить компанию пользователя."""
     is_valid, value = Validators.validate_text_field(message.text, min_length=2, max_length=255)
     if not is_valid:
         await message.answer(
@@ -203,7 +194,6 @@ async def get_company(message: Message, state: FSMContext) -> None:
 
 @user_create_router.message(StateFilter(RegistrationStates.waiting_for_position))
 async def get_position(message: Message, state: FSMContext) -> None:
-    """Получить должность пользователя."""
     is_valid, value = Validators.validate_text_field(message.text, min_length=2, max_length=255)
     if not is_valid:
         await message.answer(
@@ -233,7 +223,6 @@ async def get_position(message: Message, state: FSMContext) -> None:
 
 @user_create_router.callback_query(F.data == "yes", RegistrationStates.waiting_for_role_confirmation_first)
 async def role_confirmation_first_yes(query: CallbackQuery, state: FSMContext) -> None:
-    """Обработчик подтверждения роли Player/Voter - ДА (первый вопрос)."""
     await state.update_data(first_role_confirmation_yes=True)
     await state.set_state(RegistrationStates.waiting_for_certificate_name)
     await query.message.edit_text(
@@ -244,7 +233,6 @@ async def role_confirmation_first_yes(query: CallbackQuery, state: FSMContext) -
 
 @user_create_router.callback_query(F.data == "no", RegistrationStates.waiting_for_role_confirmation_first)
 async def role_confirmation_first_no(query: CallbackQuery, state: FSMContext) -> None:
-    """Обработчик отказа от роли Player/Voter - НЕТ (первый вопрос)."""
     await state.update_data(first_role_confirmation_yes=False)
     await state.set_state(RegistrationStates.waiting_for_company)
     await query.message.edit_text(
@@ -255,7 +243,6 @@ async def role_confirmation_first_no(query: CallbackQuery, state: FSMContext) ->
 
 @user_create_router.callback_query(F.data == "yes", RegistrationStates.waiting_for_role_confirmation_repeat)
 async def role_confirmation_repeat_yes(query: CallbackQuery, state: FSMContext) -> None:
-    """Обработчик подтверждения Player/Voter на повторном вопросе - ДА."""
     state_data = await state.get_data()
     first_role_confirmation_yes = state_data.get('first_role_confirmation_yes', False)
 
@@ -275,7 +262,6 @@ async def role_confirmation_repeat_yes(query: CallbackQuery, state: FSMContext) 
 
 @user_create_router.callback_query(F.data == "no", RegistrationStates.waiting_for_role_confirmation_repeat)
 async def role_confirmation_repeat_no(query: CallbackQuery, state: FSMContext) -> None:
-    """Обработчик отказа от Player/Voter на повторном вопросе - НЕТ."""
     state_data = await state.get_data()
     first_role_confirmation_yes = state_data.get('first_role_confirmation_yes', False)
 
@@ -316,7 +302,6 @@ async def role_confirmation_repeat_no(query: CallbackQuery, state: FSMContext) -
 
 @user_create_router.message(StateFilter(RegistrationStates.waiting_for_presentation))
 async def get_presentation(message: Message, state: FSMContext) -> None:
-    """Получить представление пользователя на соревнованиях."""
     is_valid, value = Validators.validate_text_field(message.text, min_length=3, max_length=500)
     if not is_valid:
         await message.answer(
@@ -373,12 +358,10 @@ async def get_presentation(message: Message, state: FSMContext) -> None:
 
 @user_create_router.callback_query(F.data == "yes", RegistrationStates.waiting_for_certificate_name)
 async def certificate_after_role_yes(query: CallbackQuery, state: FSMContext) -> None:
-    """Обработчик после введения сертификата для тех, кто выбрал YES на repeat confirmation."""
 
     pass
 
 async def _create_user_from_state_data(telegram_user: Any, state_data: Dict[str, Any]) -> UserModel:
-    """Создать объект пользователя из данных состояния (вспомогательная функция)."""
     user: UserModel = UserModel(
         telegram_id=telegram_user.id,
         telegram_username=telegram_user.username,
@@ -398,4 +381,3 @@ async def _create_user_from_state_data(telegram_user: Any, state_data: Dict[str,
         presentation=state_data.get("presentation"),
     )
     return user
-

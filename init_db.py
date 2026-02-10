@@ -4,7 +4,6 @@ from models import CompetitionModel
 import json
 
 async def init_sample_competitions():
-    """Добавить примеры соревнований в БД."""
     print("🚀 Инициализирую БД...")
     await db_manager.init_db()
     print("✅ Миграции выполнены успешно!")
@@ -68,7 +67,6 @@ async def init_sample_competitions():
         print(f"✅ Добавлено {len(competitions)} соревнований в БД")
 
 async def main():
-    """Главная функция."""
     print("🚀 Инициализация БД с примерами данных...")
     await init_sample_competitions()
     await db_manager.close_db()
@@ -76,4 +74,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-
