@@ -102,3 +102,9 @@ stop-bot.sh
 # Manifest and obsolete files
 FILES_MANIFEST.txt
 DOCKER_FILES_CHECKLIST.md
+
+# Test files (local testing only)
+test_*.py
+TEST_*.md
+*_results.md
+*_report.md
