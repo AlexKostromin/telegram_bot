@@ -14,7 +14,7 @@
 
 .PHONY: help \
 		up down restart logs build clean status health shell \
-		dev sqlite postgres migrate \
+		dev sqlite postgres \
 		admin-up admin-down admin-shell admin-logs \
 		db-shell db-backup db-restore \
 		test lint format \
@@ -63,7 +63,6 @@ help:
 	@echo ""
 	@echo "$(GREEN)═══ PRODUCTION (PostgreSQL) ═══$(NC)"
 	@echo "  $(YELLOW)make postgres$(NC)          Start with PostgreSQL database"
-	@echo "  $(YELLOW)make migrate$(NC)           Migrate from SQLite to PostgreSQL"
 	@echo "  $(YELLOW)make db-init$(NC)           Initialize PostgreSQL container"
 	@echo ""
 	@echo "$(GREEN)═══ ADMIN PANEL ═══$(NC)"
@@ -187,10 +186,6 @@ postgres:
 	@docker compose ps
 	@echo "$(GREEN)✓ PostgreSQL started$(NC)"
 
-migrate:
-	@echo "$(BLUE)Migrating from SQLite to PostgreSQL...$(NC)"
-	@bash scripts/migrate_to_postgres.sh
-	@echo "$(GREEN)✓ Migration complete$(NC)"
 
 # ============================================================================
 # LOGGING & MONITORING
