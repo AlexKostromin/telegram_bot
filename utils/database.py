@@ -1,8 +1,11 @@
+import logging
 from typing import Optional, List, Dict, Any
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, AsyncEngine
-from sqlalchemy.orm import sessionmaker, sessionmaker
-from sqlalchemy import select, text
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import select, text, func
 from config import DATABASE_URL
+
+logger = logging.getLogger(__name__)
 from models import (
     UserModel, CompetitionModel, RegistrationModel, RegistrationStatus,
     TimeSlotModel, VoterTimeSlotModel, JuryPanelModel, VoterJuryPanelModel, Base
@@ -45,7 +48,6 @@ class DatabaseManager:
 
     async def get_user_by_telegram_id(self, telegram_id: int) -> Optional[UserModel]:
         async with self.get_session() as session:
-            from sqlalchemy import select
             result = await session.execute(
                 select(UserModel).where(UserModel.telegram_id == telegram_id)
             )
@@ -63,21 +65,22 @@ class DatabaseManager:
             return user
 
     async def update_user(self, telegram_id: int, **kwargs: Any) -> Optional[UserModel]:
-        user: Optional[UserModel] = await self.get_user_by_telegram_id(telegram_id)
-        if not user:
-            return None
-
         async with self.get_session() as session:
+            result = await session.execute(
+                select(UserModel).where(UserModel.telegram_id == telegram_id)
+            )
+            user = result.scalar_one_or_none()
+            if not user:
+                return None
+
             for key, value in kwargs.items():
                 if hasattr(user, key):
                     setattr(user, key, value)
-            session.add(user)
             await session.commit()
             return user
 
     async def get_active_competitions(self) -> List[Dict[str, Any]]:
         async with self.get_session() as session:
-            from sqlalchemy import select
             from .serializers import CompetitionSerializer
             result = await session.execute(
                 select(CompetitionModel).where(CompetitionModel.is_active == True)
@@ -85,9 +88,8 @@ class DatabaseManager:
             competitions = result.scalars().all()
             return CompetitionSerializer.serialize_list(competitions)
 
-    async def get_competition_by_id(self, competition_id: int) -> CompetitionModel:
+    async def get_competition_by_id(self, competition_id: int) -> Optional[CompetitionModel]:
         async with self.get_session() as session:
-            from sqlalchemy import select
             result = await session.execute(
                 select(CompetitionModel).where(CompetitionModel.id == competition_id)
             )
@@ -112,7 +114,6 @@ class DatabaseManager:
 
     async def phone_exists(self, phone: str) -> bool:
         async with self.get_session() as session:
-            from sqlalchemy import select
             result = await session.execute(
                 select(UserModel).where(UserModel.phone == phone)
             )
@@ -120,13 +121,12 @@ class DatabaseManager:
 
     async def email_exists(self, email: str) -> bool:
         async with self.get_session() as session:
-            from sqlalchemy import select
             result = await session.execute(
                 select(UserModel).where(UserModel.email == email)
             )
             return result.scalar_one_or_none() is not None
 
-    async def get_pending_registrations(self, competition_id=None, role=None) -> list:
+    async def get_pending_registrations(self, competition_id: Optional[int] = None, role: Optional[str] = None) -> List[RegistrationModel]:
         async with self.get_session() as session:
             query = select(RegistrationModel).where(
                 RegistrationModel.status == RegistrationStatus.PENDING.value
@@ -140,7 +140,7 @@ class DatabaseManager:
             result = await session.execute(query)
             return result.scalars().all()
 
-    async def get_registrations_by_status(self, status: str) -> list:
+    async def get_registrations_by_status(self, status: str) -> List[RegistrationModel]:
         async with self.get_session() as session:
             result = await session.execute(
                 select(RegistrationModel).where(RegistrationModel.status == status)
@@ -151,10 +151,10 @@ class DatabaseManager:
         async with self.get_session() as session:
             registration = await session.get(RegistrationModel, registration_id)
             if registration:
-                from datetime import datetime
+                from datetime import datetime, timezone
                 registration.status = RegistrationStatus.APPROVED.value
                 registration.is_confirmed = True
-                registration.confirmed_at = datetime.utcnow()
+                registration.confirmed_at = datetime.now(timezone.utc)
                 registration.confirmed_by = admin_telegram_id
                 session.add(registration)
                 await session.commit()
@@ -182,7 +182,7 @@ class DatabaseManager:
                 await session.commit()
             return registration
 
-    async def get_registration_with_user(self, registration_id: int) -> dict:
+    async def get_registration_with_user(self, registration_id: int) -> Optional[Dict[str, Any]]:
         async with self.get_session() as session:
             registration = await session.get(RegistrationModel, registration_id)
             if not registration:
@@ -209,7 +209,7 @@ class DatabaseManager:
                 "competition_name": competition.name if competition else None,
             }
 
-    async def get_time_slots_for_competition(self, competition_id: int) -> list:
+    async def get_time_slots_for_competition(self, competition_id: int) -> List[TimeSlotModel]:
         async with self.get_session() as session:
             result = await session.execute(
                 select(TimeSlotModel).where(
@@ -233,21 +233,32 @@ class DatabaseManager:
             await session.commit()
             return time_slot
 
-    async def get_available_time_slots(self, competition_id: int) -> list:
+    async def get_available_time_slots(self, competition_id: int) -> List[Dict[str, Any]]:
         async with self.get_session() as session:
-            time_slots = await self.get_time_slots_for_competition(competition_id)
-            available = []
-
-            for slot in time_slots:
-
-                result = await session.execute(
-                    select(VoterTimeSlotModel).where(
-                        VoterTimeSlotModel.time_slot_id == slot.id
-                    )
+            count_subq = (
+                select(
+                    VoterTimeSlotModel.time_slot_id,
+                    func.count(VoterTimeSlotModel.id).label('assigned_count')
                 )
-                assigned_count = len(result.scalars().all())
+                .group_by(VoterTimeSlotModel.time_slot_id)
+                .subquery()
+            )
 
-                if assigned_count < slot.max_voters and slot.is_active:
+            result = await session.execute(
+                select(TimeSlotModel, func.coalesce(count_subq.c.assigned_count, 0).label('assigned_count'))
+                .outerjoin(count_subq, TimeSlotModel.id == count_subq.c.time_slot_id)
+                .where(
+                    TimeSlotModel.competition_id == competition_id,
+                    TimeSlotModel.is_active == True,
+                )
+                .order_by(TimeSlotModel.slot_day, TimeSlotModel.start_time)
+            )
+
+            available = []
+            for row in result:
+                slot = row[0]
+                assigned_count = row[1]
+                if assigned_count < slot.max_voters:
                     available.append({
                         "slot": slot,
                         "assigned": assigned_count,
@@ -266,24 +277,17 @@ class DatabaseManager:
             await session.commit()
             return voter_slot
 
-    async def get_voter_time_slots(self, registration_id: int) -> list:
+    async def get_voter_time_slots(self, registration_id: int) -> List[TimeSlotModel]:
         async with self.get_session() as session:
             result = await session.execute(
-                select(VoterTimeSlotModel).where(
-                    VoterTimeSlotModel.registration_id == registration_id
-                )
+                select(TimeSlotModel)
+                .join(VoterTimeSlotModel, VoterTimeSlotModel.time_slot_id == TimeSlotModel.id)
+                .where(VoterTimeSlotModel.registration_id == registration_id)
+                .order_by(TimeSlotModel.slot_day, TimeSlotModel.start_time)
             )
-            voter_slots = result.scalars().all()
+            return result.scalars().all()
 
-            time_slots = []
-            for vs in voter_slots:
-                time_slot = await session.get(TimeSlotModel, vs.time_slot_id)
-                if time_slot:
-                    time_slots.append(time_slot)
-
-            return time_slots
-
-    async def get_jury_panels_for_competition(self, competition_id: int) -> list:
+    async def get_jury_panels_for_competition(self, competition_id: int) -> List[JuryPanelModel]:
         async with self.get_session() as session:
             result = await session.execute(
                 select(JuryPanelModel).where(
@@ -315,22 +319,14 @@ class DatabaseManager:
             await session.commit()
             return voter_panel
 
-    async def get_voter_jury_panels(self, registration_id: int) -> list:
+    async def get_voter_jury_panels(self, registration_id: int) -> List[JuryPanelModel]:
         async with self.get_session() as session:
             result = await session.execute(
-                select(VoterJuryPanelModel).where(
-                    VoterJuryPanelModel.registration_id == registration_id
-                )
+                select(JuryPanelModel)
+                .join(VoterJuryPanelModel, VoterJuryPanelModel.jury_panel_id == JuryPanelModel.id)
+                .where(VoterJuryPanelModel.registration_id == registration_id)
             )
-            voter_panels = result.scalars().all()
-
-            jury_panels = []
-            for vp in voter_panels:
-                jury_panel = await session.get(JuryPanelModel, vp.jury_panel_id)
-                if jury_panel:
-                    jury_panels.append(jury_panel)
-
-            return jury_panels
+            return result.scalars().all()
 
     async def update_role_entry_status(self, competition_id: int, role: str, is_open: bool) -> CompetitionModel:
         async with self.get_session() as session:

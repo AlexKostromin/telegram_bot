@@ -1,4 +1,5 @@
 from typing import Optional, Dict, Any
+import logging
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
@@ -9,6 +10,8 @@ from keyboards import InlineKeyboards
 from states import RegistrationStates
 from utils import db_manager, Validators, BotHelpers
 from models import UserModel
+
+logger = logging.getLogger(__name__)
 
 user_create_router = Router()
 
@@ -222,23 +225,12 @@ async def get_position(message: Message, state: FSMContext) -> None:
         return
 
     await state.update_data(position=value)
-    state_data = await state.get_data()
-    first_role_confirmation_yes = state_data.get('first_role_confirmation_yes', False)
 
-    if first_role_confirmation_yes:
-
-        await state.set_state(RegistrationStates.waiting_for_role_confirmation_repeat)
-        await message.answer(
-            BotMessages.REQUEST_PLAYER_VOTER,
-            reply_markup=InlineKeyboards.yes_no_keyboard(),
-        )
-    else:
-
-        await state.set_state(RegistrationStates.waiting_for_role_confirmation_repeat)
-        await message.answer(
-            BotMessages.REQUEST_PLAYER_VOTER,
-            reply_markup=InlineKeyboards.yes_no_keyboard(),
-        )
+    await state.set_state(RegistrationStates.waiting_for_role_confirmation_repeat)
+    await message.answer(
+        BotMessages.REQUEST_PLAYER_VOTER,
+        reply_markup=InlineKeyboards.yes_no_keyboard(),
+    )
 
 @user_create_router.callback_query(F.data == "yes", RegistrationStates.waiting_for_role_confirmation_first)
 async def role_confirmation_first_yes(query: CallbackQuery, state: FSMContext) -> None:
@@ -297,22 +289,7 @@ async def role_confirmation_repeat_no(query: CallbackQuery, state: FSMContext) -
     user = await _create_user_from_state_data(query.from_user, state_data)
 
     if user:
-        include_certificate = state_data.get("certificate_name") is not None
-        user_data_text = BotHelpers.format_user_data(
-            user.first_name,
-            user.last_name,
-            user.telegram_username or "@-",
-            user.phone,
-            user.email,
-            user.country,
-            user.city,
-            user.club,
-            user.company or "-",
-            user.position or "-",
-            user.certificate_name if include_certificate else None,
-            user.presentation if include_certificate else None,
-            include_certificate,
-        )
+        user_data_text = BotHelpers.format_user_confirmation_from_model(user, state_data)
         await query.message.edit_text(
             user_data_text,
             reply_markup=InlineKeyboards.yes_no_keyboard(),
@@ -350,39 +327,19 @@ async def get_presentation(message: Message, state: FSMContext) -> None:
                 await state.set_state(RegistrationStates.waiting_for_time_slot_selection)
                 return
         except Exception as e:
-            print(f"Error loading time slots: {e}")
+            logger.error(f"Error loading time slots: {e}", exc_info=True)
 
     await state.set_state(RegistrationStates.waiting_for_final_confirmation)
 
     user = await _create_user_from_state_data(message.from_user, state_data)
 
     if user:
-        include_certificate = state_data.get("certificate_name") is not None
-        user_data_text = BotHelpers.format_user_data(
-            user.first_name,
-            user.last_name,
-            user.telegram_username or "@-",
-            user.phone,
-            user.email,
-            user.country,
-            user.city,
-            user.club,
-            user.company or "-",
-            user.position or "-",
-            user.certificate_name if include_certificate else None,
-            user.presentation if include_certificate else None,
-            include_certificate,
-        )
+        user_data_text = BotHelpers.format_user_confirmation_from_model(user, state_data)
         await message.answer(
             user_data_text,
             reply_markup=InlineKeyboards.yes_no_keyboard(),
             parse_mode="HTML",
         )
-
-@user_create_router.callback_query(F.data == "yes", RegistrationStates.waiting_for_certificate_name)
-async def certificate_after_role_yes(query: CallbackQuery, state: FSMContext) -> None:
-
-    pass
 
 async def _create_user_from_state_data(telegram_user: Any, state_data: Dict[str, Any]) -> UserModel:
     user: UserModel = UserModel(

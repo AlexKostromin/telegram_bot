@@ -1,3 +1,4 @@
+import logging
 from aiogram import Router, F
 from aiogram.types import CallbackQuery
 from aiogram.fsm.context import FSMContext
@@ -8,7 +9,18 @@ from states import RegistrationStates
 from utils import db_manager
 from utils.notifications import notify_admins_new_registration
 
+logger = logging.getLogger(__name__)
+
 confirmation_router = Router()
+
+
+def _get_competition_id(selected_competition) -> int | None:
+    if isinstance(selected_competition, dict):
+        return selected_competition.get("id")
+    if isinstance(selected_competition, int):
+        return selected_competition
+    return None
+
 
 @confirmation_router.callback_query(F.data == "yes", RegistrationStates.waiting_for_final_confirmation)
 async def final_confirmation_yes(query: CallbackQuery, state: FSMContext) -> None:
@@ -16,11 +28,11 @@ async def final_confirmation_yes(query: CallbackQuery, state: FSMContext) -> Non
     user_telegram_id = query.from_user.id
     selected_competition = state_data.get("selected_competition")
     selected_role = state_data.get("selected_role")
+    competition_id = _get_competition_id(selected_competition)
 
     existing_user = await db_manager.get_user_by_telegram_id(user_telegram_id)
 
     if not existing_user:
-
         try:
             new_user = await db_manager.create_user(
                 telegram_id=user_telegram_id,
@@ -42,20 +54,19 @@ async def final_confirmation_yes(query: CallbackQuery, state: FSMContext) -> Non
             )
             user_id = new_user.id
         except Exception as e:
-            await query.answer("❌ Ошибка при создании пользователя", show_alert=True)
-            print(f"Error creating user: {e}")
+            await query.answer("Ошибка при создании пользователя", show_alert=True)
+            logger.error(f"Error creating user: {e}", exc_info=True)
             return
     else:
         user_id = existing_user.id
 
     registration = None
-    if selected_competition:
+    if competition_id:
         try:
-
             registration = await db_manager.create_registration(
                 user_id=user_id,
                 telegram_id=user_telegram_id,
-                competition_id=selected_competition.get("id") if selected_competition else None,
+                competition_id=competition_id,
                 role=selected_role,
                 status='pending',
             )
@@ -71,8 +82,8 @@ async def final_confirmation_yes(query: CallbackQuery, state: FSMContext) -> Non
                 )
 
         except Exception as e:
-            await query.answer("❌ Ошибка при регистрации на соревнование", show_alert=True)
-            print(f"Error creating registration: {e}")
+            await query.answer("Ошибка при регистрации на соревнование", show_alert=True)
+            logger.error(f"Error creating registration: {e}", exc_info=True)
             return
 
     await query.message.edit_text(
@@ -81,22 +92,20 @@ async def final_confirmation_yes(query: CallbackQuery, state: FSMContext) -> Non
         parse_mode="HTML",
     )
 
-    if registration and existing_user:
-        user = existing_user
-    elif registration:
-        user = await db_manager.get_user_by_telegram_id(user_telegram_id)
-    else:
-        user = None
+    user = existing_user or await db_manager.get_user_by_telegram_id(user_telegram_id)
 
-    if user and registration and selected_competition:
-        competition = await db_manager.get_competition_by_id(selected_competition)
+    if user and registration and competition_id:
+        competition = await db_manager.get_competition_by_id(competition_id)
         if competition:
-            await notify_admins_new_registration(
-                bot=query.bot,
-                user_name=user.get_display_name(),
-                competition_name=competition.name,
-                role=selected_role
-            )
+            try:
+                await notify_admins_new_registration(
+                    bot=query.bot,
+                    user_name=user.get_display_name(),
+                    competition_name=competition.name,
+                    role=selected_role
+                )
+            except Exception as e:
+                logger.error(f"Error notifying admins: {e}", exc_info=True)
 
     await state.clear()
     await query.answer()
@@ -123,36 +132,41 @@ async def registration_complete_yes(query: CallbackQuery, state: FSMContext) -> 
     user_telegram_id = query.from_user.id
     selected_competition = state_data.get("selected_competition")
     selected_role = state_data.get("selected_role")
+    competition_id = _get_competition_id(selected_competition)
 
     user = await db_manager.get_user_by_telegram_id(user_telegram_id)
     if not user:
-        await query.answer("❌ Пользователь не найден", show_alert=True)
+        await query.answer("Пользователь не найден", show_alert=True)
         return
 
-    if selected_competition:
+    if competition_id:
         try:
             await db_manager.create_registration(
                 user_id=user.id,
                 telegram_id=user_telegram_id,
-                competition_id=selected_competition.get("id"),
+                competition_id=competition_id,
                 role=selected_role,
             )
         except Exception as e:
-            await query.answer("❌ Ошибка при регистрации на соревнование", show_alert=True)
-            print(f"Error creating registration: {e}")
+            await query.answer("Ошибка при регистрации на соревнование", show_alert=True)
+            logger.error(f"Error creating registration: {e}", exc_info=True)
             return
 
     role_names = {
         "player": "Игрок (Player)",
         "voter": "Судья (Voter)",
-        "spectator": "Зритель",
-        "second": "Секундант",
+        "viewer": "Зритель",
+        "adviser": "Советник",
     }
     role_display = role_names.get(selected_role, selected_role)
 
+    competition_name = ""
+    if isinstance(selected_competition, dict):
+        competition_name = selected_competition.get("name", "")
+
     success_message = BotMessages.REGISTRATION_SUCCESS.format(
         role=role_display,
-        competition=selected_competition.get("name", ""),
+        competition=competition_name,
     )
 
     await query.message.edit_text(

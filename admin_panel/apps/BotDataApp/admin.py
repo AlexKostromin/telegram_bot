@@ -1,12 +1,8 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from django.urls import reverse
-from django.db.models import Q
 from django.db import connection
-import sqlite3
-import os
 
-from .models import BotDashboardStat, AdminLog, SQLiteDataHelper
+from .models import BotDashboardStat, AdminLog, SQLiteDataHelper, MessageTemplate, Broadcast, BroadcastRecipient
 from django.db import models as django_models
 
 class Competition(django_models.Model):
@@ -324,7 +320,13 @@ class UserAdmin(admin.ModelAdmin):
         import asyncio
         import os
         import sys
-        sys.path.insert(0, '/home/alex/Документы/telegram_bot')
+        import logging
+
+        logger = logging.getLogger(__name__)
+
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+        if project_root not in sys.path:
+            sys.path.insert(0, project_root)
 
         from aiogram import Bot
         from utils.notifications import notify_user, send_email
@@ -332,10 +334,8 @@ class UserAdmin(admin.ModelAdmin):
         users = list(queryset.values_list('telegram_id', 'email', 'first_name', 'last_name'))
         count = len(users)
 
-
-
         from dotenv import load_dotenv
-        load_dotenv('/home/alex/Документы/telegram_bot/.env')
+        load_dotenv()
         bot_token = os.getenv('BOT_TOKEN')
 
         if not bot_token:
@@ -350,6 +350,9 @@ class UserAdmin(admin.ModelAdmin):
             for telegram_id, email, first_name, last_name in users:
                 user_name = f"{first_name} {last_name}".strip()
 
+                message_tg = f"📢 Уважаемый(ая) {user_name}! Напоминаем о предстоящем соревновании."
+                message_email = f"Уважаемый(ая) {user_name}!\n\nНапоминаем о предстоящем соревновании."
+
                 try:
                     await notify_user(
                         bot=bot,
@@ -358,7 +361,7 @@ class UserAdmin(admin.ModelAdmin):
                     )
                     sent_tg += 1
                 except Exception as e:
-                    print(f"❌ Telegram error for {user_name}: {e}")
+                    logger.error(f"Telegram error for {user_name}: {e}")
 
                 if email:
                     try:
@@ -369,7 +372,7 @@ class UserAdmin(admin.ModelAdmin):
                         )
                         sent_email += 1
                     except Exception as e:
-                        print(f"❌ Email error for {user_name}: {e}")
+                        logger.error(f"Email error for {user_name}: {e}")
 
             await bot.session.close()
             return sent_tg, sent_email
@@ -592,18 +595,26 @@ class MessageTemplateAdmin(admin.ModelAdmin):
     get_preview.short_description = 'Действие'
 
     def available_variables_display(self, obj):
+        from django.utils.html import escape
         if not obj.available_variables:
             return "Переменные не определены"
         html = "<table style='width: 100%;'>"
         for var, desc in obj.available_variables.items():
-            html += f"<tr><td><code>{var}</code></td><td>{desc}</td></tr>"
+            html += "<tr><td><code>{}</code></td><td>{}</td></tr>".format(escape(var), escape(str(desc)))
         html += "</table>"
         return format_html(html)
     available_variables_display.short_description = 'Доступные переменные'
 
+DELIVERY_STATUS_ICONS = {
+    'pending': '⏳', 'sent': '✅', 'delivered': '✔️', 'failed': '❌', 'blocked': '🚫',
+}
+DELIVERY_STATUS_COLORS = {
+    'pending': '#FF9800', 'sent': '#4CAF50', 'failed': '#F44336', 'blocked': '#9C27B0',
+}
+
 class BroadcastRecipientInline(admin.TabularInline):
 
-    model = __import__('admin_panel.apps.BotDataApp.models', fromlist=['BroadcastRecipient']).BroadcastRecipient
+    model = BroadcastRecipient
     extra = 0
     readonly_fields = (
         'user_id', 'telegram_id', 'email_address',
@@ -694,13 +705,14 @@ class BroadcastAdmin(admin.ModelAdmin):
     get_recipient_count.short_description = 'Отправлено'
 
     def get_filter_summary(self, obj):
+        from django.utils.html import escape
         if not obj.filters:
             return "Фильтры не установлены"
         html = "<ul>"
         for key, value in obj.filters.items():
             if isinstance(value, list):
                 value = ", ".join(str(v) for v in value)
-            html += f"<li><strong>{key}:</strong> {value}</li>"
+            html += "<li><strong>{}:</strong> {}</li>".format(escape(str(key)), escape(str(value)))
         html += "</ul>"
         return format_html(html)
     get_filter_summary.short_description = 'Применяемые фильтры'
@@ -755,97 +767,29 @@ class BroadcastRecipientAdmin(admin.ModelAdmin):
         }),
     )
 
-    def get_telegram_status(self, obj):
-        status_icons = {
-            'pending': '⏳',
-            'sent': '✅',
-            'delivered': '✔️',
-            'failed': '❌',
-            'blocked': '🚫',
-        }
-        icon = status_icons.get(obj.telegram_status, '?')
-        colors = {
-            'pending': '#FF9800',
-            'sent': '#4CAF50',
-            'failed': '#F44336',
-            'blocked': '#9C27B0',
-        }
-        color = colors.get(obj.telegram_status, '#999')
+    @staticmethod
+    def _render_delivery_status(status_value, display_label):
+        icon = DELIVERY_STATUS_ICONS.get(status_value, '?')
+        color = DELIVERY_STATUS_COLORS.get(status_value, '#999')
         return format_html(
             '<span style="color: {}; font-weight: bold;">{} {}</span>',
-            color,
-            icon,
-            obj.get_telegram_status_display() if hasattr(obj, 'get_telegram_status_display') else obj.telegram_status
+            color, icon, display_label
         )
+
+    def get_telegram_status(self, obj):
+        label = obj.get_telegram_status_display() if hasattr(obj, 'get_telegram_status_display') else obj.telegram_status
+        return self._render_delivery_status(obj.telegram_status, label)
     get_telegram_status.short_description = 'Telegram'
 
     def get_email_status(self, obj):
-        status_icons = {
-            'pending': '⏳',
-            'sent': '✅',
-            'delivered': '✔️',
-            'failed': '❌',
-            'blocked': '🚫',
-        }
-        icon = status_icons.get(obj.email_status, '?')
-        colors = {
-            'pending': '#FF9800',
-            'sent': '#4CAF50',
-            'failed': '#F44336',
-            'blocked': '#9C27B0',
-        }
-        color = colors.get(obj.email_status, '#999')
-        return format_html(
-            '<span style="color: {}; font-weight: bold;">{} {}</span>',
-            color,
-            icon,
-            obj.get_email_status_display() if hasattr(obj, 'get_email_status_display') else obj.email_status
-        )
+        label = obj.get_email_status_display() if hasattr(obj, 'get_email_status_display') else obj.email_status
+        return self._render_delivery_status(obj.email_status, label)
     get_email_status.short_description = 'Email'
 
-class BotDataAdmin(admin.AdminSite):
+admin.site.site_header = "USN Telegram Bot - Администрирование"
+admin.site.site_title = "Админка бота"
+admin.site.index_title = "Добро пожаловать в панель администрирования"
 
-    site_header = "USN Telegram Bot - Администрирование"
-    site_title = "Админка бота"
-    index_title = "Добро пожаловать в панель администрирования"
-
-    def index(self, request, extra_context=None):
-        extra_context = extra_context or {}
-
-        try:
-            user_count = SQLiteDataHelper.get_user_count()
-            competition_count = SQLiteDataHelper.get_competition_count()
-            registration_count = SQLiteDataHelper.get_registration_count()
-            reg_by_status = SQLiteDataHelper.get_registrations_by_status()
-            recent_registrations = SQLiteDataHelper.get_recent_registrations(5)
-            users_by_role = SQLiteDataHelper.get_users_by_role()
-
-            extra_context.update({
-                'user_count': user_count,
-                'competition_count': competition_count,
-                'registration_count': registration_count,
-                'reg_by_status': reg_by_status,
-                'recent_registrations': recent_registrations,
-                'users_by_role': users_by_role,
-                'show_bot_stats': True,
-            })
-        except Exception as e:
-            extra_context['bot_stats_error'] = str(e)
-
-        return super().index(request, extra_context)
-
-bot_admin_site = BotDataAdmin(name='bot_admin')
-
-bot_admin_site.register(BotDashboardStat, BotDashboardStatAdmin)
-bot_admin_site.register(AdminLog, AdminLogAdmin)
-
-bot_admin_site.register(Competition, CompetitionAdmin)
-bot_admin_site.register(User, UserAdmin)
-bot_admin_site.register(Registration, RegistrationAdmin)
-bot_admin_site.register(TimeSlot, TimeSlotAdmin)
-bot_admin_site.register(JuryPanel, JuryPanelAdmin)
-
-from .models import MessageTemplate, Broadcast, BroadcastRecipient
-bot_admin_site.register(MessageTemplate, MessageTemplateAdmin)
-bot_admin_site.register(Broadcast, BroadcastAdmin)
-bot_admin_site.register(BroadcastRecipient, BroadcastRecipientAdmin)
+admin.site.register(MessageTemplate, MessageTemplateAdmin)
+admin.site.register(Broadcast, BroadcastAdmin)
+admin.site.register(BroadcastRecipient, BroadcastRecipientAdmin)

@@ -1,14 +1,17 @@
+import logging
 from aiogram import Router, F
 from aiogram.types import CallbackQuery
 from aiogram.fsm.context import FSMContext
 
 from utils.admin_check import admin_only
 from utils import db_manager
-from utils.notifications import notify_user_approved, notify_user_rejected, notify_admins_new_registration
-from utils.helpers import BotHelpers
+from utils.notifications import notify_user_approved, notify_user_rejected, notify_user_revoked
+from utils.helpers import BotHelpers, parse_callback_id
 from keyboards.admin_keyboards import applications_list_keyboard, application_actions_keyboard, confirm_action_keyboard, admin_main_menu_keyboard
 from messages import BotMessages
 from states import AdminStates
+
+logger = logging.getLogger(__name__)
 
 admin_applications_router = Router()
 
@@ -38,7 +41,10 @@ async def list_applications_handler(callback: CallbackQuery, state: FSMContext):
 @admin_applications_router.callback_query(F.data.startswith("app_view_"))
 @admin_only
 async def view_application_detail(callback: CallbackQuery, state: FSMContext):
-    registration_id = int(callback.data.split("_")[2])
+    registration_id = parse_callback_id(callback.data)
+    if registration_id is None:
+        await callback.answer("Ошибка данных", show_alert=True)
+        return
 
     reg_data = await db_manager.get_registration_with_user(registration_id)
 
@@ -60,7 +66,10 @@ async def view_application_detail(callback: CallbackQuery, state: FSMContext):
 @admin_applications_router.callback_query(F.data.startswith("app_approve_"))
 @admin_only
 async def approve_application_confirm(callback: CallbackQuery, state: FSMContext):
-    registration_id = int(callback.data.split("_")[2])
+    registration_id = parse_callback_id(callback.data)
+    if registration_id is None:
+        await callback.answer("Ошибка данных", show_alert=True)
+        return
 
     await callback.message.edit_text(
         "<b>✅ Подтвердите одобрение заявки?</b>",
@@ -73,7 +82,10 @@ async def approve_application_confirm(callback: CallbackQuery, state: FSMContext
 @admin_applications_router.callback_query(F.data.startswith("confirm_approve_"))
 @admin_only
 async def approve_application_execute(callback: CallbackQuery, state: FSMContext):
-    registration_id = int(callback.data.split("_")[2])
+    registration_id = parse_callback_id(callback.data)
+    if registration_id is None:
+        await callback.answer("Ошибка данных", show_alert=True)
+        return
     admin_id = callback.from_user.id
 
     await db_manager.approve_registration(registration_id, admin_id)
@@ -94,7 +106,10 @@ async def approve_application_execute(callback: CallbackQuery, state: FSMContext
 @admin_applications_router.callback_query(F.data.startswith("app_reject_"))
 @admin_only
 async def reject_application_confirm(callback: CallbackQuery, state: FSMContext):
-    registration_id = int(callback.data.split("_")[2])
+    registration_id = parse_callback_id(callback.data)
+    if registration_id is None:
+        await callback.answer("Ошибка данных", show_alert=True)
+        return
 
     await callback.message.edit_text(
         "❌ Подтвердите отклонение заявки?",
@@ -106,7 +121,10 @@ async def reject_application_confirm(callback: CallbackQuery, state: FSMContext)
 @admin_applications_router.callback_query(F.data.startswith("confirm_reject_"))
 @admin_only
 async def reject_application_execute(callback: CallbackQuery, state: FSMContext):
-    registration_id = int(callback.data.split("_")[2])
+    registration_id = parse_callback_id(callback.data)
+    if registration_id is None:
+        await callback.answer("Ошибка данных", show_alert=True)
+        return
 
     await db_manager.reject_registration(registration_id)
 
@@ -126,7 +144,10 @@ async def reject_application_execute(callback: CallbackQuery, state: FSMContext)
 @admin_applications_router.callback_query(F.data.startswith("app_revoke_"))
 @admin_only
 async def revoke_application_confirm(callback: CallbackQuery, state: FSMContext):
-    registration_id = int(callback.data.split("_")[2])
+    registration_id = parse_callback_id(callback.data)
+    if registration_id is None:
+        await callback.answer("Ошибка данных", show_alert=True)
+        return
 
     await callback.message.edit_text(
         "⚠️ Подтвердите отзыв регистрации?",
@@ -138,14 +159,16 @@ async def revoke_application_confirm(callback: CallbackQuery, state: FSMContext)
 @admin_applications_router.callback_query(F.data.startswith("confirm_revoke_"))
 @admin_only
 async def revoke_application_execute(callback: CallbackQuery, state: FSMContext):
-    registration_id = int(callback.data.split("_")[2])
+    registration_id = parse_callback_id(callback.data)
+    if registration_id is None:
+        await callback.answer("Ошибка данных", show_alert=True)
+        return
 
     await db_manager.revoke_registration(registration_id)
 
     reg_data = await db_manager.get_registration_with_user(registration_id)
 
     if reg_data:
-        from utils.notifications import notify_user_revoked
         await notify_user_revoked(
             callback.bot,
             reg_data["telegram_id"],

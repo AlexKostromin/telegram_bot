@@ -1,5 +1,5 @@
 from typing import Optional
-from sqlalchemy import Column, Integer, String, BigInteger, DateTime, ForeignKey, Boolean, UniqueConstraint
+from sqlalchemy import Column, Integer, String, BigInteger, DateTime, ForeignKey, Boolean, UniqueConstraint, func
 from datetime import datetime
 import enum
 from models.user import Base
@@ -23,8 +23,8 @@ class RegistrationModel(Base):
     status: str = Column(String(20), default=RegistrationStatus.PENDING.value)
     confirmed_at: Optional[datetime] = Column(DateTime, nullable=True)
     confirmed_by: Optional[int] = Column(BigInteger, nullable=True)
-    created_at: datetime = Column(DateTime, default=datetime.utcnow)
-    updated_at: datetime = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: datetime = Column(DateTime, server_default=func.now())
+    updated_at: datetime = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     def __str__(self) -> str:
         return f"User {self.telegram_id} - Competition {self.competition_id} ({self.role})"

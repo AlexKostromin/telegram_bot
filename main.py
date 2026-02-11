@@ -80,8 +80,12 @@ async def init_sample_data() -> None:
 async def main() -> None:
     logger.info("Инициализация Telegram бота USN...")
 
-    try:
+    from config import BOT_TOKEN as _token
+    if not _token or _token == "YOUR_BOT_TOKEN_HERE":
+        logger.critical("BOT_TOKEN не настроен! Установите BOT_TOKEN в .env файле.")
+        return
 
+    try:
         await db_manager.init_db()
         logger.info("База данных инициализирована")
 

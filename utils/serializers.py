@@ -1,5 +1,6 @@
-from typing import Optional, List, Any, Dict
-from pydantic import BaseModel, ConfigDict, Field
+import json
+from typing import Optional, List, Any, Dict, Union
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from models import UserModel, CompetitionModel, RegistrationModel
 
 
@@ -71,7 +72,7 @@ class CompetitionFull(BaseModel):
     name: str
     description: Optional[str] = None
     competition_type: str
-    available_roles: Dict[str, Any]
+    available_roles: Union[List[str], Dict[str, Any]]
     player_entry_open: bool
     voter_entry_open: bool
     viewer_entry_open: bool
@@ -85,6 +86,13 @@ class CompetitionFull(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+    @field_validator("available_roles", mode="before")
+    @classmethod
+    def parse_roles(cls, v: Any) -> Union[List[str], Dict[str, Any]]:
+        if isinstance(v, str):
+            return json.loads(v)
+        return v
+
 
 class CompetitionSelection(BaseModel):
     """Информация о соревновании для выбора"""
@@ -92,10 +100,17 @@ class CompetitionSelection(BaseModel):
     name: str
     description: Optional[str] = None
     type: str = Field(alias="competition_type")
-    available_roles: Dict[str, Any]
+    available_roles: Union[List[str], Dict[str, Any]]
     is_active: bool
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    @field_validator("available_roles", mode="before")
+    @classmethod
+    def parse_roles(cls, v: Any) -> Union[List[str], Dict[str, Any]]:
+        if isinstance(v, str):
+            return json.loads(v)
+        return v
 
 
 # ============ Registration Schemas ============
@@ -161,7 +176,7 @@ class CompetitionSerializer:
     @staticmethod
     def serialize_for_selection(competition: CompetitionModel) -> Dict[str, Any]:
         schema = CompetitionSelection.model_validate(competition, from_attributes=True)
-        return schema.model_dump(by_alias=True)
+        return schema.model_dump()
 
     @staticmethod
     def serialize_list(competitions: List[CompetitionModel]) -> List[Dict[str, Any]]:
@@ -183,3 +198,5 @@ class RegistrationSerializer:
     def serialize_admin_view(registration: RegistrationModel) -> Dict[str, Any]:
         schema = RegistrationAdmin.model_validate(registration, from_attributes=True)
         return schema.model_dump()
+
+

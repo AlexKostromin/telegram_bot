@@ -1,5 +1,5 @@
 from typing import Optional
-from sqlalchemy import Column, Integer, String, BigInteger, DateTime, Boolean, Text, Date
+from sqlalchemy import Column, Integer, String, BigInteger, DateTime, Boolean, Text, Date, func
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime, date
 
@@ -27,8 +27,8 @@ class UserModel(Base):
     date_of_birth: Optional[date] = Column(Date, nullable=True)
     channel_name: Optional[str] = Column(String(255), nullable=True)
     is_active: bool = Column(Boolean, default=True)
-    created_at: datetime = Column(DateTime, default=datetime.utcnow)
-    updated_at: datetime = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: datetime = Column(DateTime, server_default=func.now())
+    updated_at: datetime = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     def __str__(self) -> str:
         return f"{self.first_name} {self.last_name} ({self.telegram_username})"

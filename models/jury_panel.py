@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, func
 from models.user import Base
 
 class JuryPanelModel(Base):
@@ -11,7 +11,7 @@ class JuryPanelModel(Base):
     panel_name: str = Column(String(100), nullable=False)
     max_voters: int = Column(Integer, default=5)
     is_active: bool = Column(Boolean, default=True)
-    created_at: datetime = Column(DateTime, default=datetime.utcnow)
+    created_at: datetime = Column(DateTime, server_default=func.now())
 
     def __str__(self) -> str:
         return f"{self.panel_name} (max {self.max_voters})"

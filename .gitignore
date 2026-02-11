@@ -102,6 +102,12 @@ stop-bot.sh
 # Manifest and obsolete files
 FILES_MANIFEST.txt
 DOCKER_FILES_CHECKLIST.md
+VISUAL_*.md
+img.png
+init_db.py
+docker-entrypoint.sh
+docker-compose.admin.yml
+docker-compose.prod.yml
 
 # Test files (local testing only)
 test_*.py

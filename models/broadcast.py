@@ -1,5 +1,5 @@
 from typing import Optional, Dict, Any
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, JSON, ForeignKey, Enum
+from sqlalchemy import Column, Integer, BigInteger, String, Text, DateTime, Boolean, JSON, ForeignKey, Enum, func
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from enum import Enum as PyEnum
@@ -38,8 +38,8 @@ class MessageTemplate(Base):
     is_active: bool = Column(Boolean, default=True, index=True)
 
     created_by: Optional[int] = Column(Integer, nullable=True)
-    created_at: datetime = Column(DateTime, default=datetime.utcnow, index=True)
-    updated_at: datetime = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: datetime = Column(DateTime, server_default=func.now(), index=True)
+    updated_at: datetime = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     broadcasts = relationship("Broadcast", back_populates="template")
 
@@ -77,8 +77,8 @@ class Broadcast(Base):
     completed_at: Optional[datetime] = Column(DateTime, nullable=True)
 
     created_by: int = Column(Integer, nullable=False)
-    created_at: datetime = Column(DateTime, default=datetime.utcnow, index=True)
-    updated_at: datetime = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: datetime = Column(DateTime, server_default=func.now(), index=True)
+    updated_at: datetime = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     recipients = relationship("BroadcastRecipient", back_populates="broadcast", cascade="all, delete-orphan")
 
@@ -110,7 +110,7 @@ class BroadcastRecipient(Base):
     broadcast = relationship("Broadcast", back_populates="recipients")
 
     user_id: int = Column(Integer, nullable=False, index=True)
-    telegram_id: int = Column(Integer, nullable=False, index=True)
+    telegram_id: int = Column(BigInteger, nullable=False, index=True)
 
     telegram_status: DeliveryStatus = Column(
         Enum(DeliveryStatus),
@@ -133,8 +133,8 @@ class BroadcastRecipient(Base):
     rendered_subject: Optional[str] = Column(String(500), nullable=True)
     rendered_body: Optional[str] = Column(Text, nullable=True)
 
-    created_at: datetime = Column(DateTime, default=datetime.utcnow, index=True)
-    updated_at: datetime = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: datetime = Column(DateTime, server_default=func.now(), index=True)
+    updated_at: datetime = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     def __str__(self) -> str:
         return f"BroadcastRecipient(user_id={self.user_id}, broadcast_id={self.broadcast_id})"

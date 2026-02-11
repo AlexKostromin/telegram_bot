@@ -101,6 +101,11 @@ class SQLiteDataHelper(models.Model):
     def get_recent_registrations(limit=10):
         try:
             results = SQLiteDataHelper.execute_raw_query(
+                "SELECT r.id, r.user_id, r.competition_id, r.role, r.status, r.created_at, "
+                "u.first_name, u.last_name "
+                "FROM registrations r LEFT JOIN users u ON r.user_id = u.id "
+                "ORDER BY r.id DESC LIMIT %s",
+                [limit]
             )
             return results
         except Exception:

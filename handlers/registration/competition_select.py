@@ -15,10 +15,7 @@ competition_select_router = Router()
 
 @competition_select_router.callback_query(F.data == "register")
 async def register_callback_handler(query: CallbackQuery, state: FSMContext) -> None:
-    print(f"DEBUG: register callback received")
-
     competitions: List[Dict[str, Any]] = await db_manager.get_active_competitions()
-    print(f"DEBUG: competitions = {competitions}")
 
     if not competitions:
 

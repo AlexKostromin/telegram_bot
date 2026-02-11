@@ -1,5 +1,5 @@
 from typing import Dict, Optional, List
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, JSON
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, JSON, func
 from datetime import datetime
 from models.user import Base
 
@@ -21,8 +21,8 @@ class CompetitionModel(Base):
     is_active: bool = Column(Boolean, default=True)
     start_date: Optional[datetime] = Column(DateTime, nullable=True)
     end_date: Optional[datetime] = Column(DateTime, nullable=True)
-    created_at: datetime = Column(DateTime, default=datetime.utcnow)
-    updated_at: datetime = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: datetime = Column(DateTime, server_default=func.now())
+    updated_at: datetime = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     def __str__(self) -> str:
         return f"{self.name} ({self.competition_type})"

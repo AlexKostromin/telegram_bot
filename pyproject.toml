@@ -4,7 +4,7 @@ version = "1.0.0"
 description = "Telegram bot with Django admin panel for competition management"
 authors = ["Your Name <you@example.com>"]
 readme = "README.md"
-packages = [{include = ".", from = "."}]
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.10"

@@ -1,6 +1,6 @@
 from typing import Optional
 from datetime import datetime, date, time
-from sqlalchemy import Column, Integer, Date, Time, Boolean, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, Date, Time, Boolean, DateTime, ForeignKey, func
 from models.user import Base
 
 class TimeSlotModel(Base):
@@ -14,7 +14,7 @@ class TimeSlotModel(Base):
     end_time: time = Column(Time, nullable=False)
     max_voters: int = Column(Integer, default=10)
     is_active: bool = Column(Boolean, default=True)
-    created_at: datetime = Column(DateTime, default=datetime.utcnow)
+    created_at: datetime = Column(DateTime, server_default=func.now())
 
     def __str__(self) -> str:
         return f"{self.slot_day} {self.start_time}-{self.end_time}"

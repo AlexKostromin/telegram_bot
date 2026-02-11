@@ -10,15 +10,3 @@ class AdminStates(StatesGroup):
 
     managing_competition = State()
     editing_role_entry = State()
-
-    managing_time_slots = State()
-    creating_time_slot = State()
-    waiting_for_slot_day = State()
-    waiting_for_slot_start = State()
-    waiting_for_slot_end = State()
-    waiting_for_slot_max_voters = State()
-
-    managing_jury_panels = State()
-    creating_jury_panel = State()
-    waiting_for_panel_name = State()
-    waiting_for_panel_max_voters = State()
