@@ -2,27 +2,31 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    POETRY_VIRTUALENVS_IN_PROJECT=true \
+    POETRY_VIRTUALENVS_CREATE=true \
+    POETRY_CACHE_DIR=/tmp/poetry_cache
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
     sqlite3 \
+    gcc \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements
-COPY requirements.txt .
+RUN pip install poetry
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+COPY pyproject.toml poetry.lock ./
 
-# Copy application
+RUN poetry install --no-interaction --no-ansi && \
+    rm -rf /tmp/poetry_cache
+
 COPY . .
 
-# Create necessary directories
 RUN mkdir -p /app/admin_panel/staticfiles /app/admin_panel/media
 
-# Run migrations and start server
 EXPOSE 8000
 
 ENV PYTHONPATH=/app:$PYTHONPATH
 ENV DJANGO_SETTINGS_MODULE=admin_panel.settings
 
-CMD ["sh", "-c", "cd /app && python admin_panel/manage.py migrate --noinput && python admin_panel/manage.py runserver 0.0.0.0:8000"]
+CMD ["sh", "-c", "cd /app && /app/.venv/bin/python admin_panel/manage.py migrate --noinput && /app/.venv/bin/python admin_panel/manage.py runserver 0.0.0.0:8000"]
