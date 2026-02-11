@@ -32,6 +32,7 @@ async def user_data_edit_needed(query: CallbackQuery, state: FSMContext) -> None
     await query.message.edit_text(
         BotMessages.EDIT_FIELD_PROMPT,
         reply_markup=InlineKeyboards.edit_fields_keyboard(edit_fields),
+        parse_mode="HTML",
     )
     await query.answer()
 
@@ -47,6 +48,7 @@ async def edit_field_selected(query: CallbackQuery, state: FSMContext) -> None:
     await query.message.edit_text(
         BotMessages.EDIT_FIELD_INPUT_PROMPT.format(field_name=field_display),
         reply_markup=InlineKeyboards.back_keyboard(),
+        parse_mode="HTML",
     )
     await query.answer()
 
@@ -70,6 +72,7 @@ async def edit_field_input(message: Message, state: FSMContext) -> None:
         await message.answer(
             BotMessages.INVALID_INPUT,
             reply_markup=InlineKeyboards.back_keyboard(),
+            parse_mode="HTML",
         )
         return
 
@@ -103,6 +106,7 @@ async def continue_editing(query: CallbackQuery, state: FSMContext) -> None:
     await query.message.edit_text(
         BotMessages.EDIT_FIELD_PROMPT,
         reply_markup=InlineKeyboards.edit_fields_keyboard(edit_fields),
+        parse_mode="HTML",
     )
     await query.answer()
 

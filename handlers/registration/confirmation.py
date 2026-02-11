@@ -78,6 +78,7 @@ async def final_confirmation_yes(query: CallbackQuery, state: FSMContext) -> Non
     await query.message.edit_text(
         BotMessages.REGISTRATION_PENDING,
         reply_markup=InlineKeyboards.main_menu_keyboard(),
+        parse_mode="HTML",
     )
 
     if registration and existing_user:
@@ -112,6 +113,7 @@ async def final_confirmation_no(query: CallbackQuery, state: FSMContext) -> None
     await query.message.edit_text(
         BotMessages.EDIT_FIELD_PROMPT,
         reply_markup=InlineKeyboards.edit_fields_keyboard(edit_fields),
+        parse_mode="HTML",
     )
     await query.answer()
 
@@ -156,6 +158,7 @@ async def registration_complete_yes(query: CallbackQuery, state: FSMContext) -> 
     await query.message.edit_text(
         success_message,
         reply_markup=InlineKeyboards.main_menu_keyboard(),
+        parse_mode="HTML",
     )
 
     await state.clear()

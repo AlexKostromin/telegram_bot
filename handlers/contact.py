@@ -54,6 +54,7 @@ async def contact_message_handler(message: Message, state: FSMContext, bot: Bot)
     await message.answer(
         BotMessages.CONTACT_SUCCESS,
         reply_markup=InlineKeyboards.main_menu_keyboard(),
+        parse_mode="HTML",
     )
 
     logger.info(f"✅ Confirmation sent to user {user_id}")

@@ -25,6 +25,7 @@ async def register_callback_handler(query: CallbackQuery, state: FSMContext) -> 
         await query.message.edit_text(
             BotMessages.NO_ACTIVE_COMPETITIONS,
             reply_markup=InlineKeyboards.main_menu_keyboard(),
+            parse_mode="HTML",
         )
         await state.clear()
         await query.answer()
@@ -41,15 +42,17 @@ async def register_callback_handler(query: CallbackQuery, state: FSMContext) -> 
             available_roles = json.loads(available_roles)
 
         await query.message.edit_text(
-            f"📋 {BotMessages.format_competition_info(competition['name'], competition['type'])}\n\n"
+            f"<b>📋 {BotMessages.format_competition_info(competition['name'], competition['type'])}</b>\n\n"
             f"{BotMessages.SELECT_ROLE}",
             reply_markup=InlineKeyboards.roles_keyboard(available_roles),
+            parse_mode="HTML",
         )
     else:
 
         await query.message.edit_text(
             BotMessages.SELECT_COMPETITION,
             reply_markup=InlineKeyboards.competitions_keyboard(competitions),
+            parse_mode="HTML",
         )
 
     await query.answer()
@@ -64,6 +67,7 @@ async def competition_select_handler(message: Message, state: FSMContext) -> Non
         await message.answer(
             BotMessages.NO_ACTIVE_COMPETITIONS,
             reply_markup=InlineKeyboards.main_menu_keyboard(),
+            parse_mode="HTML",
         )
         await state.clear()
         return
@@ -79,15 +83,17 @@ async def competition_select_handler(message: Message, state: FSMContext) -> Non
             available_roles = json.loads(available_roles)
 
         await message.answer(
-            f"📋 {BotMessages.format_competition_info(competition['name'], competition['type'])}\n\n"
+            f"<b>📋 {BotMessages.format_competition_info(competition['name'], competition['type'])}</b>\n\n"
             f"{BotMessages.SELECT_ROLE}",
             reply_markup=InlineKeyboards.roles_keyboard(available_roles),
+            parse_mode="HTML",
         )
     else:
 
         await message.answer(
             BotMessages.SELECT_COMPETITION,
             reply_markup=InlineKeyboards.competitions_keyboard(competitions),
+            parse_mode="HTML",
         )
 
 @competition_select_router.callback_query(F.data.startswith("competition_"))
@@ -111,8 +117,9 @@ async def competition_select_callback(query: CallbackQuery, state: FSMContext) -
         available_roles = json.loads(available_roles)
 
     await query.message.edit_text(
-        f"📋 {BotMessages.format_competition_info(competition.name, competition.competition_type)}\n\n"
+        f"<b>📋 {BotMessages.format_competition_info(competition.name, competition.competition_type)}</b>\n\n"
         f"{BotMessages.SELECT_ROLE}",
         reply_markup=InlineKeyboards.roles_keyboard(available_roles),
+        parse_mode="HTML",
     )
     await query.answer()

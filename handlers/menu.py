@@ -14,6 +14,7 @@ async def back_to_menu_handler(query: CallbackQuery, state: FSMContext) -> None:
     await query.message.edit_text(
         BotMessages.MAIN_MENU,
         reply_markup=InlineKeyboards.main_menu_keyboard(),
+        parse_mode="HTML",
     )
     await query.answer()
 
@@ -23,6 +24,7 @@ async def contact_team_handler(query: CallbackQuery, state: FSMContext) -> None:
     await query.message.edit_text(
         BotMessages.CONTACT_REQUEST_MESSAGE,
         reply_markup=InlineKeyboards.back_keyboard(),
+        parse_mode="HTML",
     )
     await query.answer()
 
@@ -35,6 +37,7 @@ async def back_handler(query: CallbackQuery, state: FSMContext) -> None:
         await query.message.edit_text(
             BotMessages.MAIN_MENU,
             reply_markup=InlineKeyboards.main_menu_keyboard(),
+            parse_mode="HTML",
         )
     else:
 
@@ -42,6 +45,7 @@ async def back_handler(query: CallbackQuery, state: FSMContext) -> None:
         await query.message.edit_text(
             BotMessages.MAIN_MENU,
             reply_markup=InlineKeyboards.main_menu_keyboard(),
+            parse_mode="HTML",
         )
 
     await query.answer()

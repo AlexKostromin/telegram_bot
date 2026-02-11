@@ -20,15 +20,17 @@ async def list_applications_handler(callback: CallbackQuery, state: FSMContext):
     if not applications:
         await callback.message.answer(
             BotMessages.ADMIN_NO_PENDING,
-            reply_markup=admin_main_menu_keyboard()
+            reply_markup=admin_main_menu_keyboard(),
+            parse_mode="HTML"
         )
         await callback.answer()
         return
 
-    text = f"📬 Заявки на рассмотрение ({len(applications)}):"
+    text = f"<b>📬 Заявки на рассмотрение</b> ({len(applications)}):"
     await callback.message.answer(
         text,
-        reply_markup=applications_list_keyboard(applications)
+        reply_markup=applications_list_keyboard(applications),
+        parse_mode="HTML"
     )
     await state.set_state(AdminStates.viewing_applications_list)
     await callback.answer()
@@ -48,7 +50,8 @@ async def view_application_detail(callback: CallbackQuery, state: FSMContext):
 
     await callback.message.edit_text(
         text,
-        reply_markup=application_actions_keyboard(registration_id, reg_data["status"])
+        reply_markup=application_actions_keyboard(registration_id, reg_data["status"]),
+        parse_mode="HTML"
     )
     await state.update_data(current_application=registration_id)
     await state.set_state(AdminStates.viewing_application_detail)
@@ -60,8 +63,9 @@ async def approve_application_confirm(callback: CallbackQuery, state: FSMContext
     registration_id = int(callback.data.split("_")[2])
 
     await callback.message.edit_text(
-        "✅ Подтвердите одобрение заявки?",
-        reply_markup=confirm_action_keyboard("approve", str(registration_id))
+        "<b>✅ Подтвердите одобрение заявки?</b>",
+        reply_markup=confirm_action_keyboard("approve", str(registration_id)),
+        parse_mode="HTML"
     )
     await state.set_state(AdminStates.confirming_action)
     await callback.answer()

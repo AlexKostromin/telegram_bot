@@ -41,20 +41,23 @@ async def role_select_callback(query: CallbackQuery, state: FSMContext) -> None:
 
         await state.set_state(RegistrationStates.waiting_for_existing_user_confirmation)
         await query.message.edit_text(
-            f"Добрый день, {existing_user.first_name} {existing_user.last_name}!\n\n"
-            f"Пожалуйста, проверьте ваши данные для регистрации:\n\n"
-            f"👤 Имя пользователя Telegram: {existing_user.telegram_username or '@-'}\n"
+            f"<b>Проверка данных</b>\n"
+            f"━━━━━━━━━━━━━━━━━\n\n"
+            f"Добрый день, <b>{existing_user.first_name} {existing_user.last_name}</b>!\n\n"
+            f"👤 Telegram: {existing_user.telegram_username or '@-'}\n"
             f"📱 Телефон: {existing_user.phone}\n"
             f"📧 Email: {existing_user.email}\n"
             f"🌍 Страна: {existing_user.country}\n"
             f"🏙️ Город: {existing_user.city}\n"
             f"🏫 Клуб/школа: {existing_user.club}\n"
-            f"{f'📜 Имя для сертификата (лат.): {existing_user.certificate_name}' if selected_role in ['player', 'voter'] and existing_user.certificate_name else ''}\n"
+            f"{f'📜 Сертификат (лат.): {existing_user.certificate_name}' if selected_role in ['player', 'voter'] and existing_user.certificate_name else ''}\n"
             f"🏢 Компания: {existing_user.company or '-'}\n"
             f"💼 Должность: {existing_user.position or '-'}\n"
-            f"🎤 Как вас представить: {existing_user.presentation or '-'}\n\n"
-            f"Всё верно?",
+            f"🎤 Представление: {existing_user.presentation or '-'}\n\n"
+            f"━━━━━━━━━━━━━━━━━\n\n"
+            f"<i>Всё верно?</i>",
             reply_markup=InlineKeyboards.yes_no_keyboard(),
+            parse_mode="HTML",
         )
     else:
 
@@ -62,6 +65,7 @@ async def role_select_callback(query: CallbackQuery, state: FSMContext) -> None:
         await query.message.edit_text(
             BotMessages.REQUEST_FIRST_NAME,
             reply_markup=InlineKeyboards.back_keyboard(),
+            parse_mode="HTML",
         )
 
     await query.answer()

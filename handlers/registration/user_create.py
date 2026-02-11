@@ -21,6 +21,7 @@ async def get_first_name(message: Message, state: FSMContext) -> None:
         await message.answer(
             BotMessages.INVALID_INPUT,
             reply_markup=InlineKeyboards.back_keyboard(),
+            parse_mode="HTML",
         )
         return
 
@@ -29,6 +30,7 @@ async def get_first_name(message: Message, state: FSMContext) -> None:
     await message.answer(
         BotMessages.REQUEST_LAST_NAME,
         reply_markup=InlineKeyboards.back_keyboard(),
+        parse_mode="HTML",
     )
 
 @user_create_router.message(StateFilter(RegistrationStates.waiting_for_last_name))
@@ -38,6 +40,7 @@ async def get_last_name(message: Message, state: FSMContext) -> None:
         await message.answer(
             BotMessages.INVALID_INPUT,
             reply_markup=InlineKeyboards.back_keyboard(),
+            parse_mode="HTML",
         )
         return
 
@@ -46,6 +49,7 @@ async def get_last_name(message: Message, state: FSMContext) -> None:
     await message.answer(
         BotMessages.REQUEST_PHONE,
         reply_markup=InlineKeyboards.back_keyboard(),
+        parse_mode="HTML",
     )
 
 @user_create_router.message(StateFilter(RegistrationStates.waiting_for_phone))
@@ -55,13 +59,15 @@ async def get_phone(message: Message, state: FSMContext) -> None:
         await message.answer(
             BotMessages.INVALID_INPUT,
             reply_markup=InlineKeyboards.back_keyboard(),
+            parse_mode="HTML",
         )
         return
 
     if await db_manager.phone_exists(value):
         await message.answer(
-            "❌ Пользователь с таким номером телефона уже зарегистрирован.",
+            "<b>❌ Ошибка</b>\n\nПользователь с таким номером телефона уже зарегистрирован.",
             reply_markup=InlineKeyboards.back_keyboard(),
+            parse_mode="HTML",
         )
         return
 
@@ -70,6 +76,7 @@ async def get_phone(message: Message, state: FSMContext) -> None:
     await message.answer(
         BotMessages.REQUEST_EMAIL,
         reply_markup=InlineKeyboards.back_keyboard(),
+        parse_mode="HTML",
     )
 
 @user_create_router.message(StateFilter(RegistrationStates.waiting_for_email))
@@ -79,13 +86,15 @@ async def get_email(message: Message, state: FSMContext) -> None:
         await message.answer(
             BotMessages.INVALID_INPUT,
             reply_markup=InlineKeyboards.back_keyboard(),
+            parse_mode="HTML",
         )
         return
 
     if await db_manager.email_exists(value):
         await message.answer(
-            "❌ Пользователь с таким email уже зарегистрирован.",
+            "<b>❌ Ошибка</b>\n\nПользователь с таким email уже зарегистрирован.",
             reply_markup=InlineKeyboards.back_keyboard(),
+            parse_mode="HTML",
         )
         return
 
@@ -94,6 +103,7 @@ async def get_email(message: Message, state: FSMContext) -> None:
     await message.answer(
         BotMessages.REQUEST_COUNTRY,
         reply_markup=InlineKeyboards.back_keyboard(),
+        parse_mode="HTML",
     )
 
 @user_create_router.message(StateFilter(RegistrationStates.waiting_for_country))
@@ -103,6 +113,7 @@ async def get_country(message: Message, state: FSMContext) -> None:
         await message.answer(
             BotMessages.INVALID_INPUT,
             reply_markup=InlineKeyboards.back_keyboard(),
+            parse_mode="HTML",
         )
         return
 
@@ -111,6 +122,7 @@ async def get_country(message: Message, state: FSMContext) -> None:
     await message.answer(
         BotMessages.REQUEST_CITY,
         reply_markup=InlineKeyboards.back_keyboard(),
+        parse_mode="HTML",
     )
 
 @user_create_router.message(StateFilter(RegistrationStates.waiting_for_city))
@@ -120,6 +132,7 @@ async def get_city(message: Message, state: FSMContext) -> None:
         await message.answer(
             BotMessages.INVALID_INPUT,
             reply_markup=InlineKeyboards.back_keyboard(),
+            parse_mode="HTML",
         )
         return
 
@@ -128,6 +141,7 @@ async def get_city(message: Message, state: FSMContext) -> None:
     await message.answer(
         BotMessages.REQUEST_CLUB,
         reply_markup=InlineKeyboards.back_keyboard(),
+        parse_mode="HTML",
     )
 
 @user_create_router.message(StateFilter(RegistrationStates.waiting_for_club))
@@ -137,6 +151,7 @@ async def get_club(message: Message, state: FSMContext) -> None:
         await message.answer(
             BotMessages.INVALID_INPUT,
             reply_markup=InlineKeyboards.back_keyboard(),
+            parse_mode="HTML",
         )
         return
 
@@ -145,6 +160,7 @@ async def get_club(message: Message, state: FSMContext) -> None:
     await message.answer(
         BotMessages.REQUEST_PLAYER_VOTER,
         reply_markup=InlineKeyboards.yes_no_keyboard(),
+        parse_mode="HTML",
     )
 
 @user_create_router.message(StateFilter(RegistrationStates.waiting_for_certificate_name))
@@ -152,8 +168,9 @@ async def get_certificate_name(message: Message, state: FSMContext) -> None:
     is_valid, value = Validators.validate_certificate_name(message.text)
     if not is_valid:
         await message.answer(
-            "❌ Пожалуйста, используйте только латинские буквы, пробелы и дефисы.",
+            "<b>❌ Ошибка формата</b>\n\nПожалуйста, используйте только латинские буквы, пробелы и дефисы.",
             reply_markup=InlineKeyboards.back_keyboard(),
+            parse_mode="HTML",
         )
         return
 
@@ -182,6 +199,7 @@ async def get_company(message: Message, state: FSMContext) -> None:
         await message.answer(
             BotMessages.INVALID_INPUT,
             reply_markup=InlineKeyboards.back_keyboard(),
+            parse_mode="HTML",
         )
         return
 
@@ -199,6 +217,7 @@ async def get_position(message: Message, state: FSMContext) -> None:
         await message.answer(
             BotMessages.INVALID_INPUT,
             reply_markup=InlineKeyboards.back_keyboard(),
+            parse_mode="HTML",
         )
         return
 
@@ -257,6 +276,7 @@ async def role_confirmation_repeat_yes(query: CallbackQuery, state: FSMContext) 
         await query.message.edit_text(
             BotMessages.REQUEST_CERTIFICATE_NAME,
             reply_markup=InlineKeyboards.back_keyboard(),
+            parse_mode="HTML",
         )
     await query.answer()
 
@@ -296,6 +316,7 @@ async def role_confirmation_repeat_no(query: CallbackQuery, state: FSMContext) -
         await query.message.edit_text(
             user_data_text,
             reply_markup=InlineKeyboards.yes_no_keyboard(),
+            parse_mode="HTML",
         )
 
     await query.answer()
@@ -307,6 +328,7 @@ async def get_presentation(message: Message, state: FSMContext) -> None:
         await message.answer(
             BotMessages.INVALID_INPUT,
             reply_markup=InlineKeyboards.back_keyboard(),
+            parse_mode="HTML",
         )
         return
 
@@ -354,6 +376,7 @@ async def get_presentation(message: Message, state: FSMContext) -> None:
         await message.answer(
             user_data_text,
             reply_markup=InlineKeyboards.yes_no_keyboard(),
+            parse_mode="HTML",
         )
 
 @user_create_router.callback_query(F.data == "yes", RegistrationStates.waiting_for_certificate_name)

@@ -19,5 +19,5 @@ async def admin_command_handler(message: Message, state: FSMContext) -> None:
     pending_count: int = len(pending_apps)
 
 
-    await message.answer(text, reply_markup=admin_main_menu_keyboard())
+    await message.answer(text, reply_markup=admin_main_menu_keyboard(), parse_mode="HTML")
     await state.set_state(AdminStates.admin_main_menu)

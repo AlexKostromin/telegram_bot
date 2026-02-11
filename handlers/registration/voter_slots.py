@@ -30,7 +30,8 @@ async def time_slot_selection_handler(callback: CallbackQuery, state: FSMContext
             if panels:
                 await callback.message.edit_text(
                     BotMessages.SELECT_JURY_PANEL,
-                    reply_markup=InlineKeyboards.jury_panels_keyboard(panels)
+                    reply_markup=InlineKeyboards.jury_panels_keyboard(panels),
+                    parse_mode="HTML"
                 )
                 await state.set_state(RegistrationStates.waiting_for_jury_panel_selection)
             else:
@@ -61,6 +62,7 @@ async def time_slot_selection_handler(callback: CallbackQuery, state: FSMContext
                     await callback.message.edit_text(
                         user_data_text,
                         reply_markup=InlineKeyboards.yes_no_keyboard(),
+                        parse_mode="HTML",
                     )
         else:
             await state.set_state(RegistrationStates.waiting_for_final_confirmation)
