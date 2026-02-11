@@ -22,6 +22,14 @@ services:
       - POSTGRES_USER=${POSTGRES_USER:-usn_bot}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-secure_password}
       - POSTGRES_DB=${POSTGRES_DB:-usn_bot_db}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USERNAME=${SMTP_USERNAME:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - SMTP_USE_TLS=${SMTP_USE_TLS:-True}
+      - SUPPORT_EMAIL=${SUPPORT_EMAIL:-}
+      - EMAIL_FROM_NAME=${EMAIL_FROM_NAME:-USN Competitions}
+      - SUPPORT_TELEGRAM_ID=${SUPPORT_TELEGRAM_ID:-}
       - PYTHONUNBUFFERED=1
 
     volumes:

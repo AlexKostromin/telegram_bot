@@ -51,6 +51,10 @@ class BotConfig(BaseModel):
 
 class DatabaseConfig(BaseModel):
     """Database Configuration"""
+
+    class Config:
+        validate_default = True
+
     database_url: str = Field(
         default="postgresql+asyncpg://usn_bot:secure_password@postgres:5432/usn_bot_db",
         description="Database connection URL"
@@ -80,6 +84,10 @@ class DatabaseConfig(BaseModel):
 
 class SMTPConfig(BaseModel):
     """Email/SMTP Configuration"""
+
+    class Config:
+        validate_default = True
+
     smtp_host: str = Field(default="smtp.mailtrap.io", description="SMTP server host")
     smtp_port: int = Field(default=587, ge=1, le=65535, description="SMTP server port")
     smtp_username: str = Field(default="", description="SMTP username")
@@ -92,28 +100,34 @@ class SMTPConfig(BaseModel):
     @field_validator("smtp_host", mode="before")
     @classmethod
     def get_smtp_host(cls, v):
-        return v or os.getenv("SMTP_HOST", "smtp.mailtrap.io")
+        return os.getenv("SMTP_HOST") or v or "smtp.mailtrap.io"
 
     @field_validator("smtp_port", mode="before")
     @classmethod
     def get_smtp_port(cls, v):
+        env_val = os.getenv("SMTP_PORT")
+        if env_val:
+            return int(env_val)
         if isinstance(v, int):
             return v
-        return int(os.getenv("SMTP_PORT", "587"))
+        return 587
 
     @field_validator("smtp_username", mode="before")
     @classmethod
     def get_smtp_username(cls, v):
-        return v or os.getenv("SMTP_USERNAME", "")
+        return os.getenv("SMTP_USERNAME") or v or ""
 
     @field_validator("smtp_password", mode="before")
     @classmethod
     def get_smtp_password(cls, v):
-        return v or os.getenv("SMTP_PASSWORD", "")
+        return os.getenv("SMTP_PASSWORD") or v or ""
 
     @field_validator("smtp_use_tls", mode="before")
     @classmethod
     def parse_smtp_use_tls(cls, v):
+        env_val = os.getenv("SMTP_USE_TLS")
+        if env_val is not None:
+            return env_val.lower() == "true"
         if isinstance(v, bool):
             return v
         if isinstance(v, str):
@@ -123,24 +137,24 @@ class SMTPConfig(BaseModel):
     @field_validator("support_email", mode="before")
     @classmethod
     def get_support_email(cls, v):
-        return v or os.getenv("SUPPORT_EMAIL", None)
+        return os.getenv("SUPPORT_EMAIL") or v or None
 
     @field_validator("email_from_name", mode="before")
     @classmethod
     def get_email_from_name(cls, v):
-        return v or os.getenv("EMAIL_FROM_NAME", "USN Competitions")
+        return os.getenv("EMAIL_FROM_NAME") or v or "USN Competitions"
 
     @field_validator("support_telegram_id", mode="before")
     @classmethod
     def parse_support_telegram_id(cls, v):
-        if isinstance(v, int) and v > 0:
-            return v
         telegram_id_str = os.getenv("SUPPORT_TELEGRAM_ID")
         if telegram_id_str:
             try:
                 return int(telegram_id_str)
             except (ValueError, TypeError):
-                return None
+                pass
+        if isinstance(v, int) and v > 0:
+            return v
         return None
 
     def is_configured(self) -> bool:

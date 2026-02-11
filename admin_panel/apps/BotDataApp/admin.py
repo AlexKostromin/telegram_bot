@@ -6,10 +6,15 @@ from .models import BotDashboardStat, AdminLog, SQLiteDataHelper, MessageTemplat
 from django.db import models as django_models
 
 class Competition(django_models.Model):
-    id = django_models.IntegerField(primary_key=True, verbose_name='ID')
+    id = django_models.AutoField(primary_key=True, verbose_name='ID')
     name = django_models.CharField(max_length=255, verbose_name='Название')
     description = django_models.CharField(max_length=500, null=True, blank=True, verbose_name='Описание')
-    competition_type = django_models.CharField(max_length=50, verbose_name='Тип соревнования')
+    COMPETITION_TYPE_CHOICES = [
+        ('classic_game', 'Классическая игра'),
+        ('tournament', 'Турнир'),
+        ('online', 'Онлайн'),
+    ]
+    competition_type = django_models.CharField(max_length=50, choices=COMPETITION_TYPE_CHOICES, verbose_name='Тип соревнования')
     available_roles = django_models.JSONField(null=True, blank=True, verbose_name='Доступные роли')
     player_entry_open = django_models.BooleanField(default=False, verbose_name='Регистрация для игроков открыта')
     voter_entry_open = django_models.BooleanField(default=False, verbose_name='Регистрация для судей открыта')
@@ -49,7 +54,7 @@ class Competition(django_models.Model):
             return cursor.fetchone()[0]
 
 class User(django_models.Model):
-    id = django_models.IntegerField(primary_key=True, verbose_name='ID')
+    id = django_models.AutoField(primary_key=True, verbose_name='ID')
     telegram_id = django_models.BigIntegerField(unique=True, verbose_name='Telegram ID')
     telegram_username = django_models.CharField(max_length=255, null=True, blank=True, verbose_name='Telegram имя пользователя')
     first_name = django_models.CharField(max_length=100, null=True, blank=True, verbose_name='Имя')
@@ -101,7 +106,7 @@ class Registration(django_models.Model):
         ('adviser', 'Советник'),
     ]
 
-    id = django_models.IntegerField(primary_key=True, verbose_name='ID')
+    id = django_models.AutoField(primary_key=True, verbose_name='ID')
     user_id = django_models.IntegerField(verbose_name='ID пользователя')
     telegram_id = django_models.BigIntegerField(null=True, blank=True, verbose_name='Telegram ID')
     competition_id = django_models.IntegerField(verbose_name='ID соревнования')
@@ -136,7 +141,7 @@ class Registration(django_models.Model):
             return None
 
 class TimeSlot(django_models.Model):
-    id = django_models.IntegerField(primary_key=True, verbose_name='ID')
+    id = django_models.AutoField(primary_key=True, verbose_name='ID')
     competition_id = django_models.IntegerField(verbose_name='ID соревнования')
     slot_day = django_models.DateField(verbose_name='День')
     start_time = django_models.TimeField(verbose_name='Начало')
@@ -163,7 +168,7 @@ class TimeSlot(django_models.Model):
             return f"Соревнование #{self.competition_id}"
 
 class JuryPanel(django_models.Model):
-    id = django_models.IntegerField(primary_key=True, verbose_name='ID')
+    id = django_models.AutoField(primary_key=True, verbose_name='ID')
     competition_id = django_models.IntegerField(verbose_name='ID соревнования')
     panel_name = django_models.CharField(max_length=100, verbose_name='Название коллегии')
     max_voters = django_models.IntegerField(default=5, verbose_name='Макс судей')
@@ -239,14 +244,14 @@ class CompetitionAdmin(admin.ModelAdmin):
     list_display = ['name', 'competition_type', 'get_status_badge', 'get_registration_count', 'created_at']
     list_filter = ['competition_type', 'is_active', 'created_at']
     search_fields = ['name', 'description']
-    readonly_fields = ['id', 'created_at', 'updated_at', 'get_registration_stats']
+    readonly_fields = ['id', 'created_at', 'updated_at', 'get_registration_stats',
+                       'get_players_list', 'get_voters_list', 'get_viewers_list', 'get_advisers_list']
     fieldsets = (
         ('Основная информация', {
             'fields': ('id', 'name', 'description', 'competition_type', 'is_active', 'created_at', 'updated_at')
         }),
-        ('Доступные роли', {
-            'fields': ('player_entry_open', 'voter_entry_open', 'viewer_entry_open', 'adviser_entry_open', 'available_roles'),
-            'classes': ('collapse',)
+        ('Entry is Open — регистрация открыта', {
+            'fields': ('player_entry_open', 'voter_entry_open', 'viewer_entry_open', 'adviser_entry_open'),
         }),
         ('Параметры', {
             'fields': ('requires_time_slots', 'requires_jury_panel', 'start_date', 'end_date'),
@@ -255,7 +260,33 @@ class CompetitionAdmin(admin.ModelAdmin):
         ('Статистика', {
             'fields': ('get_registration_stats',)
         }),
+        ('Players — Игроки', {
+            'fields': ('get_players_list',),
+        }),
+        ('Voters — Судьи', {
+            'fields': ('get_voters_list',),
+        }),
+        ('Viewers — Зрители', {
+            'fields': ('get_viewers_list',),
+        }),
+        ('Advisers — Советники', {
+            'fields': ('get_advisers_list',),
+        }),
     )
+
+    def save_model(self, request, obj, form, change):
+        import json
+        roles = []
+        if obj.player_entry_open:
+            roles.append("player")
+        if obj.voter_entry_open:
+            roles.append("voter")
+        if obj.viewer_entry_open:
+            roles.append("viewer")
+        if obj.adviser_entry_open:
+            roles.append("adviser")
+        obj.available_roles = json.dumps(roles)
+        super().save_model(request, obj, form, change)
 
     def get_status_badge(self, obj):
         if obj.is_active:
@@ -288,6 +319,55 @@ class CompetitionAdmin(admin.ModelAdmin):
             total, approved, total - approved
         )
     get_registration_stats.short_description = 'Статистика регистраций'
+
+    def _get_participants_by_role(self, obj, role):
+        if not obj.pk:
+            return format_html('<em>Сначала сохраните соревнование</em>')
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT u.first_name, u.last_name, u.telegram_username, u.telegram_id, r.status "
+                "FROM registrations r JOIN users u ON r.user_id = u.id "
+                "WHERE r.competition_id = %s AND r.role = %s ORDER BY r.created_at",
+                [obj.id, role]
+            )
+            rows = cursor.fetchall()
+        if not rows:
+            return format_html('<em>Нет участников</em>')
+        status_colors = {'approved': '#28a745', 'pending': '#ffc107', 'rejected': '#dc3545'}
+        status_labels = {'approved': 'Одобрен', 'pending': 'Ожидает', 'rejected': 'Отклонён'}
+        html = '<table style="border-collapse:collapse;width:100%">'
+        html += '<tr style="background:#f0f0f0"><th style="padding:6px;text-align:left">Имя</th>'
+        html += '<th style="padding:6px;text-align:left">Telegram</th>'
+        html += '<th style="padding:6px;text-align:left">Статус</th></tr>'
+        for first_name, last_name, username, tg_id, status in rows:
+            name = f"{first_name or ''} {last_name or ''}".strip() or f"ID {tg_id}"
+            tg = f"@{username}" if username else str(tg_id)
+            color = status_colors.get(status, '#999')
+            label = status_labels.get(status, status)
+            html += (
+                f'<tr><td style="padding:4px 6px">{name}</td>'
+                f'<td style="padding:4px 6px">{tg}</td>'
+                f'<td style="padding:4px 6px"><span style="background:{color};color:white;'
+                f'padding:2px 8px;border-radius:3px;font-size:11px">{label}</span></td></tr>'
+            )
+        html += '</table>'
+        return format_html(html)
+
+    def get_players_list(self, obj):
+        return self._get_participants_by_role(obj, 'player')
+    get_players_list.short_description = 'Список игроков'
+
+    def get_voters_list(self, obj):
+        return self._get_participants_by_role(obj, 'voter')
+    get_voters_list.short_description = 'Список судей'
+
+    def get_viewers_list(self, obj):
+        return self._get_participants_by_role(obj, 'viewer')
+    get_viewers_list.short_description = 'Список зрителей'
+
+    def get_advisers_list(self, obj):
+        return self._get_participants_by_role(obj, 'adviser')
+    get_advisers_list.short_description = 'Список советников'
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):

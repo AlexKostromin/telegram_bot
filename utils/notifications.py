@@ -82,12 +82,13 @@ async def send_email(
 
     if not smtp_config.is_configured():
         logger.warning("SMTP not configured, skipping email")
-        return
+        raise RuntimeError("SMTP не настроен. Задайте SMTP_HOST, SMTP_USERNAME, SMTP_PASSWORD, SUPPORT_EMAIL в .env")
 
     try:
         logger.info(f"Отправляю email на {email_address}...")
 
-        msg = MIMEText(body, 'html')
+        content_type = 'html' if '<' in body and '>' in body else 'plain'
+        msg = MIMEText(body, content_type, 'utf-8')
         msg['Subject'] = subject
         msg['From'] = smtp_config.get_from_address()
         msg['To'] = email_address
