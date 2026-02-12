@@ -41,7 +41,7 @@ async def final_confirmation_yes(query: CallbackQuery, state: FSMContext) -> Non
                 last_name=state_data.get("last_name", ""),
                 phone=state_data.get("phone", ""),
                 email=state_data.get("email", ""),
-                country=state_data.get("country", ""),
+                country=state_data.get("country"),
                 city=state_data.get("city", ""),
                 club=state_data.get("club", ""),
                 bio=state_data.get("bio"),
@@ -141,12 +141,24 @@ async def registration_complete_yes(query: CallbackQuery, state: FSMContext) -> 
 
     if competition_id:
         try:
-            await db_manager.create_registration(
+            registration = await db_manager.create_registration(
                 user_id=user.id,
                 telegram_id=user_telegram_id,
                 competition_id=competition_id,
                 role=selected_role,
+                status='pending',
             )
+
+            if state_data.get('selected_time_slots'):
+                for slot_id in state_data.get('selected_time_slots', []):
+                    await db_manager.assign_voter_to_time_slot(registration.id, slot_id)
+
+            if state_data.get('selected_jury_panel'):
+                await db_manager.assign_voter_to_jury_panel(
+                    registration.id,
+                    state_data['selected_jury_panel']
+                )
+
         except Exception as e:
             await query.answer("Ошибка при регистрации на соревнование", show_alert=True)
             logger.error(f"Error creating registration: {e}", exc_info=True)

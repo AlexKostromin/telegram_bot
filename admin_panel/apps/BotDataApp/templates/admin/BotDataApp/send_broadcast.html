@@ -1,0 +1,238 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}Отправить сообщение{% endblock %}
+
+{% block content %}
+<style>
+    .broadcast-form {
+        max-width: 960px;
+    }
+    .broadcast-form fieldset {
+        margin-bottom: 20px;
+        border: 1px solid var(--hairline-color, #ddd);
+        padding: 16px 20px;
+        border-radius: 4px;
+        background: var(--darkened-bg, #f8f8f8);
+    }
+    .broadcast-form legend {
+        font-weight: 600;
+        padding: 0 8px;
+        font-size: 14px;
+        color: var(--body-quiet-color, #666);
+    }
+    .broadcast-form label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 4px;
+        font-size: 13px;
+        color: var(--body-fg, #333);
+    }
+    .broadcast-form input[type="text"],
+    .broadcast-form textarea {
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid var(--border-color, #ccc);
+        border-radius: 4px;
+        font-size: 14px;
+        box-sizing: border-box;
+        background: var(--body-bg, #fff);
+        color: var(--body-fg, #333);
+    }
+    .broadcast-form input[type="text"]:focus,
+    .broadcast-form textarea:focus {
+        border-color: var(--primary, #417690);
+        outline: none;
+    }
+    .broadcast-form textarea {
+        min-height: 140px;
+        font-family: inherit;
+        resize: vertical;
+        line-height: 1.5;
+    }
+    .broadcast-form .checkbox-group {
+        margin: 8px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .broadcast-form .checkbox-group input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+    }
+    .broadcast-form .checkbox-group label {
+        display: inline;
+        font-weight: normal;
+        font-size: 14px;
+        margin-bottom: 0;
+        cursor: pointer;
+    }
+
+    .recipients-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 8px;
+        font-size: 13px;
+    }
+    .recipients-table th {
+        background: var(--primary, #417690);
+        color: var(--header-link-color, #fff);
+        font-weight: 600;
+        padding: 8px 12px;
+        text-align: left;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .recipients-table td {
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--hairline-color, #eee);
+        color: var(--body-fg, #333);
+    }
+    .recipients-table tr:last-child td {
+        border-bottom: none;
+    }
+    .recipients-table tbody tr:hover {
+        background: var(--selected-bg, #e4e4e4);
+    }
+    .recipients-table .row-num {
+        color: var(--body-quiet-color, #999);
+        width: 40px;
+        text-align: center;
+    }
+    .recipients-table .tg-id {
+        font-family: monospace;
+        font-size: 13px;
+    }
+    .recipients-table .email-cell a {
+        color: var(--link-fg, #417690);
+    }
+    .recipients-table .no-data {
+        color: var(--body-quiet-color, #aaa);
+        font-style: italic;
+    }
+
+    .broadcast-submit {
+        padding: 12px 16px;
+        margin: 20px 0 0;
+        background: var(--darkened-bg, #f8f8f8);
+        border: 1px solid var(--hairline-color, #ddd);
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+    .broadcast-submit input[type="submit"] {
+        padding: 8px 24px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        border-radius: 4px;
+        color: var(--header-link-color, #fff);
+        background: var(--primary, #417690);
+    }
+    .broadcast-submit input[type="submit"]:hover {
+        opacity: 0.85;
+    }
+    .broadcast-submit .cancel-link {
+        color: var(--body-quiet-color, #666);
+        text-decoration: none;
+        font-size: 14px;
+    }
+    .broadcast-submit .cancel-link:hover {
+        color: var(--body-fg, #333);
+        text-decoration: underline;
+    }
+
+    .error-msg {
+        color: var(--error-fg, #ba2121);
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    .page-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--body-fg, #333);
+        margin-bottom: 16px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid var(--primary, #417690);
+    }
+</style>
+
+<div class="broadcast-form">
+    <h2 class="page-title">Отправить сообщение выбранным пользователям ({{ recipients|length }})</h2>
+
+    {% if errors %}
+        {% for error in errors %}
+            <p class="error-msg">{{ error }}</p>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+
+        {% for user in recipients %}
+            <input type="hidden" name="_selected_action" value="{{ user.pk }}" />
+        {% endfor %}
+        <input type="hidden" name="action" value="send_custom_message" />
+
+        <fieldset>
+            <legend>Каналы доставки</legend>
+            <div class="checkbox-group">
+                <input type="checkbox" name="send_telegram" id="id_send_telegram" value="1"
+                    {% if send_telegram %}checked{% endif %} />
+                <label for="id_send_telegram">Telegram</label>
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" name="send_email" id="id_send_email" value="1"
+                    {% if send_email %}checked{% endif %} />
+                <label for="id_send_email">Email</label>
+            </div>
+        </fieldset>
+
+        <fieldset>
+            <legend>Сообщение</legend>
+            <div style="margin-bottom: 12px;">
+                <label for="id_subject">Тема письма (только для Email)</label>
+                <input type="text" name="subject" id="id_subject" value="{{ subject }}" placeholder="Уведомление от USN Competitions" />
+            </div>
+            <div>
+                <label for="id_message">Текст сообщения</label>
+                <textarea name="message" id="id_message" placeholder="Введите текст сообщения...">{{ message }}</textarea>
+            </div>
+        </fieldset>
+
+        <fieldset>
+            <legend>Получатели</legend>
+            <table class="recipients-table">
+                <thead>
+                    <tr>
+                        <th style="width:40px;text-align:center">#</th>
+                        <th>Имя</th>
+                        <th>Telegram ID</th>
+                        <th>Email</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in recipients %}
+                    <tr>
+                        <td class="row-num">{{ forloop.counter }}</td>
+                        <td>{{ user.first_name }} {{ user.last_name }}</td>
+                        <td class="tg-id">{{ user.telegram_id }}</td>
+                        <td class="email-cell">{% if user.email %}{{ user.email }}{% else %}<span class="no-data">не указан</span>{% endif %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </fieldset>
+
+        <div class="broadcast-submit">
+            <input type="submit" name="confirm_send" value="Отправить" />
+            <a href="{% url 'admin:BotDataApp_user_changelist' %}" class="cancel-link">Отмена</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

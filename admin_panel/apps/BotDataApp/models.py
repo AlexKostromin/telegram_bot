@@ -2,7 +2,7 @@ import os
 import sys
 from django.db import models
 from django.db import connection
-from django.core.exceptions import ImproperlyConfigured
+
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
 

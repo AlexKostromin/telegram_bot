@@ -1,8 +1,9 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from django.db import connection
+from django.template.response import TemplateResponse
 
-from .models import BotDashboardStat, AdminLog, SQLiteDataHelper, MessageTemplate, Broadcast, BroadcastRecipient
+from .models import BotDashboardStat, AdminLog
 from django.db import models as django_models
 
 class Competition(django_models.Model):
@@ -16,10 +17,10 @@ class Competition(django_models.Model):
     ]
     competition_type = django_models.CharField(max_length=50, choices=COMPETITION_TYPE_CHOICES, verbose_name='Тип соревнования')
     available_roles = django_models.JSONField(null=True, blank=True, verbose_name='Доступные роли')
-    player_entry_open = django_models.BooleanField(default=False, verbose_name='Регистрация для игроков открыта')
-    voter_entry_open = django_models.BooleanField(default=False, verbose_name='Регистрация для судей открыта')
-    viewer_entry_open = django_models.BooleanField(default=False, verbose_name='Регистрация для зрителей открыта')
-    adviser_entry_open = django_models.BooleanField(default=False, verbose_name='Регистрация для советников открыта')
+    player_entry_open = django_models.BooleanField(default=True, verbose_name='Регистрация для игроков открыта')
+    voter_entry_open = django_models.BooleanField(default=True, verbose_name='Регистрация для судей открыта')
+    viewer_entry_open = django_models.BooleanField(default=True, verbose_name='Регистрация для зрителей открыта')
+    adviser_entry_open = django_models.BooleanField(default=True, verbose_name='Регистрация для советников открыта')
     requires_time_slots = django_models.BooleanField(default=False, verbose_name='Требуются временные слоты')
     requires_jury_panel = django_models.BooleanField(default=False, verbose_name='Требуется судейская коллегия')
     is_active = django_models.BooleanField(default=True, verbose_name='Активно')
@@ -71,6 +72,9 @@ class User(django_models.Model):
     bio = django_models.TextField(null=True, blank=True, verbose_name='Биография')
     date_of_birth = django_models.DateField(null=True, blank=True, verbose_name='Дата рождения')
     channel_name = django_models.CharField(max_length=255, null=True, blank=True, verbose_name='Имя канала')
+    classic_rating = django_models.IntegerField(null=True, blank=True, verbose_name='Рейтинг Classic')
+    quick_rating = django_models.IntegerField(null=True, blank=True, verbose_name='Рейтинг Quick')
+    team_rating = django_models.IntegerField(null=True, blank=True, verbose_name='Рейтинг Team')
     is_active = django_models.BooleanField(default=True, verbose_name='Активен')
     created_at = django_models.DateTimeField(auto_now_add=True, verbose_name='Создано')
     updated_at = django_models.DateTimeField(auto_now=True, verbose_name='Обновлено')
@@ -190,53 +194,6 @@ class JuryPanel(django_models.Model):
             return comp.name
         except Competition.DoesNotExist:
             return f"Соревнование #{self.competition_id}"
-
-@admin.register(BotDashboardStat)
-class BotDashboardStatAdmin(admin.ModelAdmin):
-
-    list_display = ['stat_name', 'stat_value', 'updated_at']
-    list_filter = ['updated_at']
-    search_fields = ['stat_name']
-    readonly_fields = ['updated_at']
-
-    def has_add_permission(self, request):
-        return request.user.is_superuser
-
-    def has_delete_permission(self, request, obj=None):
-        return request.user.is_superuser
-
-@admin.register(AdminLog)
-class AdminLogAdmin(admin.ModelAdmin):
-
-    list_display = ['get_action_badge', 'target_type', 'target_id', 'created_at']
-    list_filter = ['action', 'target_type', 'created_at']
-    search_fields = ['description', 'target_id']
-    readonly_fields = ['admin_id', 'action', 'target_type', 'target_id', 'description', 'created_at']
-
-    def get_action_badge(self, obj):
-        colors = {
-            'approve': '#28a745',
-            'reject': '#dc3545',
-            'revoke': '#ffc107',
-            'update_competition': '#007bff',
-            'delete_user': '#e83e8c',
-            'other': '#6c757d',
-        }
-        color = colors.get(obj.action, '#6c757d')
-        return format_html(
-            '<span style="background-color: {}; color: white; padding: 5px 10px; '
-            'border-radius: 4px; font-weight: bold;">{}</span>',
-            color,
-            obj.get_action_display()
-        )
-
-    get_action_badge.short_description = 'Действие'
-
-    def has_add_permission(self, request):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        return request.user.is_superuser
 
 @admin.register(Competition)
 class CompetitionAdmin(admin.ModelAdmin):
@@ -376,7 +333,7 @@ class UserAdmin(admin.ModelAdmin):
     list_filter = ['country', 'city', 'is_active', 'created_at']
     search_fields = ['first_name', 'last_name', 'telegram_id', 'email', 'phone', 'telegram_username']
     readonly_fields = ['id', 'telegram_id', 'created_at', 'updated_at']
-    actions = ['send_notification_action']
+    actions = ['send_custom_message']
     fieldsets = (
         ('Telegram', {
             'fields': ('id', 'telegram_id', 'telegram_username')
@@ -391,80 +348,155 @@ class UserAdmin(admin.ModelAdmin):
             'fields': ('bio', 'channel_name', 'certificate_name', 'presentation'),
             'classes': ('collapse',)
         }),
+        ('Рейтинги (только для игроков)', {
+            'fields': ('classic_rating', 'quick_rating', 'team_rating'),
+            'classes': ('collapse',)
+        }),
         ('Статус и метаданные', {
             'fields': ('is_active', 'created_at', 'updated_at')
         }),
     )
 
-    def send_notification_action(self, request, queryset):
-        import asyncio
+    def send_custom_message(self, request, queryset):
+        if 'confirm_send' in request.POST:
+            message_text = request.POST.get('message', '').strip()
+            subject = request.POST.get('subject', '').strip()
+            send_telegram = request.POST.get('send_telegram') == '1'
+            send_email = request.POST.get('send_email') == '1'
+
+            errors_list = []
+            if not message_text:
+                errors_list.append('Введите текст сообщения.')
+            if not send_telegram and not send_email:
+                errors_list.append('Выберите хотя бы один канал доставки.')
+
+            if errors_list:
+                recipients = list(queryset)
+                return TemplateResponse(request, 'admin/BotDataApp/send_broadcast.html', {
+                    **self.admin_site.each_context(request),
+                    'title': 'Отправить сообщение',
+                    'recipients': recipients,
+                    'message': message_text,
+                    'subject': subject,
+                    'send_telegram': send_telegram,
+                    'send_email': send_email,
+                    'errors': errors_list,
+                    'opts': self.model._meta,
+                })
+
+            return self._execute_broadcast(
+                request, queryset, message_text, subject, send_telegram, send_email,
+            )
+
+        recipients = list(queryset)
+        return TemplateResponse(request, 'admin/BotDataApp/send_broadcast.html', {
+            **self.admin_site.each_context(request),
+            'title': 'Отправить сообщение',
+            'recipients': recipients,
+            'message': '',
+            'subject': '',
+            'send_telegram': True,
+            'send_email': True,
+            'errors': [],
+            'opts': self.model._meta,
+        })
+
+    send_custom_message.short_description = '📤 Отправить сообщение'
+
+    def _execute_broadcast(self, request, queryset, message_text, subject, send_telegram, send_email):
         import os
-        import sys
+        import json
         import logging
-
-        logger = logging.getLogger(__name__)
-
-        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-        if project_root not in sys.path:
-            sys.path.insert(0, project_root)
-
-        from aiogram import Bot
-        from utils.notifications import notify_user, send_email
-
-        users = list(queryset.values_list('telegram_id', 'email', 'first_name', 'last_name'))
-        count = len(users)
+        import smtplib
+        import urllib.request
+        from email.mime.text import MIMEText
 
         from dotenv import load_dotenv
         load_dotenv()
-        bot_token = os.getenv('BOT_TOKEN')
 
-        if not bot_token:
-            self.message_user(request, f'❌ Ошибка: BOT_TOKEN не найден в .env', level='ERROR')
+        logger = logging.getLogger(__name__)
+
+        bot_token = os.getenv('BOT_TOKEN')
+        if not bot_token and send_telegram:
+            self.message_user(request, 'BOT_TOKEN не найден в .env', level='ERROR')
             return
 
-        async def send_all():
-            bot = Bot(token=bot_token)
-            sent_tg = 0
-            sent_email = 0
+        smtp_host = os.getenv('SMTP_HOST', '')
+        smtp_port = int(os.getenv('SMTP_PORT', '587'))
+        smtp_username = os.getenv('SMTP_USERNAME', '')
+        smtp_password = os.getenv('SMTP_PASSWORD', '')
+        smtp_use_tls = os.getenv('SMTP_USE_TLS', 'True').lower() == 'true'
+        support_email = os.getenv('SUPPORT_EMAIL', '')
+        email_from_name = os.getenv('EMAIL_FROM_NAME', 'USN Competitions')
+        smtp_configured = all([smtp_host, smtp_username, smtp_password, support_email])
 
-            for telegram_id, email, first_name, last_name in users:
-                user_name = f"{first_name} {last_name}".strip()
+        users = list(queryset.values_list('telegram_id', 'email', 'first_name', 'last_name'))
+        count = len(users)
+        sent_tg = 0
+        sent_email_count = 0
+        errors = []
 
-                message_tg = f"📢 Уважаемый(ая) {user_name}! Напоминаем о предстоящем соревновании."
-                message_email = f"Уважаемый(ая) {user_name}!\n\nНапоминаем о предстоящем соревновании."
+        telegram_api_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
 
+        for telegram_id, email, first_name, last_name in users:
+            first_name = first_name or ''
+            last_name = last_name or ''
+            full_name = f"{first_name} {last_name}".strip()
+
+            rendered = message_text.replace('{first_name}', first_name)
+            rendered = rendered.replace('{last_name}', last_name)
+            rendered = rendered.replace('{full_name}', full_name)
+
+            if send_telegram:
                 try:
-                    await notify_user(
-                        bot=bot,
-                        telegram_id=telegram_id,
-                        message=message_tg
+                    payload = json.dumps({'chat_id': telegram_id, 'text': rendered}).encode('utf-8')
+                    req = urllib.request.Request(
+                        telegram_api_url,
+                        data=payload,
+                        headers={'Content-Type': 'application/json'},
                     )
-                    sent_tg += 1
+                    with urllib.request.urlopen(req, timeout=10) as resp:
+                        result = json.loads(resp.read())
+                        if result.get('ok'):
+                            sent_tg += 1
+                        else:
+                            errors.append(f"TG {full_name}: {result.get('description', 'Unknown')}")
                 except Exception as e:
-                    logger.error(f"Telegram error for {user_name}: {e}")
+                    logger.error(f"Telegram error for {full_name}: {e}")
+                    errors.append(f"TG {full_name}: {e}")
 
-                if email:
-                    try:
-                        await send_email(
-                            email_address=email,
-                            subject="ВАЖНОЕ УВЕДОМЛЕНИЕ - Соревнование начинается завтра!",
-                            body=message_email
-                        )
-                        sent_email += 1
-                    except Exception as e:
-                        logger.error(f"Email error for {user_name}: {e}")
+            if send_email and email and smtp_configured:
+                try:
+                    rendered_subject = subject or 'Уведомление от USN Competitions'
+                    rendered_subject = rendered_subject.replace('{first_name}', first_name)
+                    rendered_subject = rendered_subject.replace('{last_name}', last_name)
+                    rendered_subject = rendered_subject.replace('{full_name}', full_name)
 
-            await bot.session.close()
-            return sent_tg, sent_email
+                    msg = MIMEText(rendered, 'plain', 'utf-8')
+                    msg['Subject'] = rendered_subject
+                    msg['From'] = f"{email_from_name} <{support_email}>"
+                    msg['To'] = email
 
-        try:
-            sent_tg, sent_email = asyncio.run(send_all())
-            msg = f'✅ Telegram: {sent_tg}/{count} | Email: {sent_email}/{count}'
-            self.message_user(request, msg)
-        except Exception as e:
-            self.message_user(request, f'❌ Ошибка при отправке: {str(e)}', level='ERROR')
+                    server = smtplib.SMTP(smtp_host, smtp_port, timeout=15)
+                    if smtp_use_tls:
+                        server.starttls()
+                    server.login(smtp_username, smtp_password)
+                    server.send_message(msg)
+                    server.quit()
+                    sent_email_count += 1
+                except Exception as e:
+                    logger.error(f"Email error for {full_name}: {e}")
+                    errors.append(f"Email {full_name}: {e}")
 
-    send_notification_action.short_description = '📤 Отправить в Telegram + Email'
+        parts = []
+        if send_telegram:
+            parts.append(f'Telegram: {sent_tg}/{count}')
+        if send_email:
+            parts.append(f'Email: {sent_email_count}/{count}')
+        result_msg = ' | '.join(parts)
+        if errors:
+            result_msg += f' | Ошибки: {len(errors)}'
+        self.message_user(request, result_msg)
 
     def get_full_name(self, obj):
         return f"{obj.first_name} {obj.last_name}".strip() or f"User #{obj.telegram_id}"
@@ -501,7 +533,7 @@ class RegistrationAdmin(admin.ModelAdmin):
             'classes': ('wide',)
         }),
     )
-    actions = ['approve_registrations', 'reject_registrations', 'mark_as_confirmed']
+    actions = ['approve_registrations', 'reject_registrations', 'revoke_registrations', 'mark_as_confirmed']
 
     def get_user_name(self, obj):
         user = obj.get_user()
@@ -566,15 +598,63 @@ class RegistrationAdmin(admin.ModelAdmin):
         return "Соревнование не найдено"
     get_competition_info.short_description = 'Информация о соревновании'
 
+    def _notify_users(self, registrations, message_template):
+        import os
+        import json
+        import logging
+        import urllib.request
+        from dotenv import load_dotenv
+        load_dotenv()
+
+        logger = logging.getLogger(__name__)
+        bot_token = os.getenv('BOT_TOKEN')
+        if not bot_token:
+            return
+
+        api_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+        for reg in registrations:
+            telegram_id = reg.telegram_id
+            if not telegram_id:
+                user = reg.get_user()
+                if user:
+                    telegram_id = user.telegram_id
+            if not telegram_id:
+                continue
+
+            comp = reg.get_competition()
+            comp_name = comp.name if comp else f"#{reg.competition_id}"
+            text = message_template.format(competition=comp_name)
+
+            try:
+                payload = json.dumps({'chat_id': telegram_id, 'text': text}).encode('utf-8')
+                req = urllib.request.Request(api_url, data=payload, headers={'Content-Type': 'application/json'})
+                urllib.request.urlopen(req, timeout=10)
+            except Exception as e:
+                logger.error(f"Notification error for {telegram_id}: {e}")
+
     def approve_registrations(self, request, queryset):
+        pending = list(queryset.filter(status='pending'))
         updated = queryset.filter(status='pending').update(status='approved')
+        if pending:
+            self._notify_users(pending, "Ваша заявка на участие в «{competition}» одобрена!")
         self.message_user(request, f'✅ Одобрено {updated} заявок.')
     approve_registrations.short_description = 'Одобрить выбранные заявки'
 
     def reject_registrations(self, request, queryset):
+        pending = list(queryset.filter(status='pending'))
         updated = queryset.filter(status='pending').update(status='rejected')
+        if pending:
+            self._notify_users(pending, "К сожалению, ваша заявка на участие в «{competition}» отклонена.")
         self.message_user(request, f'❌ Отклонено {updated} заявок.')
     reject_registrations.short_description = 'Отклонить выбранные заявки'
+
+    def revoke_registrations(self, request, queryset):
+        approved = list(queryset.filter(status='approved'))
+        updated = queryset.filter(status='approved').update(status='pending', is_confirmed=False)
+        if approved:
+            self._notify_users(approved, "Ваша заявка на участие в «{competition}» отозвана и ожидает повторного рассмотрения.")
+        self.message_user(request, f'⚠️ Отозвано {updated} заявок (статус: на рассмотрении).')
+    revoke_registrations.short_description = '⚠️ Отозвать одобренные заявки'
 
     def mark_as_confirmed(self, request, queryset):
         updated = queryset.update(is_confirmed=True)
@@ -643,233 +723,10 @@ class JuryPanelAdmin(admin.ModelAdmin):
         else:
             self.message_user(request, f'✅ Судейская коллегия создана: {obj.panel_name}')
 
-class MessageTemplateAdmin(admin.ModelAdmin):
-
-    list_display = ('name', 'is_active', 'get_preview', 'created_at')
-    list_filter = ('is_active', 'created_at')
-    search_fields = ('name', 'description')
-    readonly_fields = ('created_at', 'updated_at', 'available_variables_display')
-
-    fieldsets = (
-        ('Основная информация', {
-            'fields': ('name', 'description', 'is_active')
-        }),
-        ('Содержание', {
-            'fields': ('subject', 'body_telegram', 'body_email')
-        }),
-        ('Переменные', {
-            'fields': ('available_variables_display',),
-            'classes': ('collapse',)
-        }),
-        ('Система', {
-            'fields': ('created_by', 'created_at', 'updated_at'),
-            'classes': ('collapse',)
-        }),
-    )
-
-    def get_preview(self, obj):
-        return format_html(
-            '<button style="background-color: #417690; color: white; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer;">'
-            'Предпросмотр</button>'
-        )
-    get_preview.short_description = 'Действие'
-
-    def available_variables_display(self, obj):
-        from django.utils.html import escape
-        if not obj.available_variables:
-            return "Переменные не определены"
-        html = "<table style='width: 100%;'>"
-        for var, desc in obj.available_variables.items():
-            html += "<tr><td><code>{}</code></td><td>{}</td></tr>".format(escape(var), escape(str(desc)))
-        html += "</table>"
-        return format_html(html)
-    available_variables_display.short_description = 'Доступные переменные'
-
-DELIVERY_STATUS_ICONS = {
-    'pending': '⏳', 'sent': '✅', 'delivered': '✔️', 'failed': '❌', 'blocked': '🚫',
-}
-DELIVERY_STATUS_COLORS = {
-    'pending': '#FF9800', 'sent': '#4CAF50', 'failed': '#F44336', 'blocked': '#9C27B0',
-}
-
-class BroadcastRecipientInline(admin.TabularInline):
-
-    model = BroadcastRecipient
-    extra = 0
-    readonly_fields = (
-        'user_id', 'telegram_id', 'email_address',
-        'telegram_status', 'telegram_sent_at', 'email_status', 'email_sent_at'
-    )
-    can_delete = False
-    fields = ('user_id', 'telegram_id', 'email_address', 'telegram_status', 'email_status')
-
-class BroadcastAdmin(admin.ModelAdmin):
-
-    list_display = (
-        'name',
-        'get_status_badge',
-        'get_progress_bar',
-        'get_recipient_count',
-        'created_at'
-    )
-    list_filter = ('status', 'send_telegram', 'send_email', 'created_at')
-    search_fields = ('name', 'template_id')
-    readonly_fields = (
-        'created_at', 'updated_at', 'started_at', 'completed_at',
-        'total_recipients', 'sent_count', 'failed_count',
-        'get_filter_summary'
-    )
-    actions = ['execute_broadcast', 'reset_broadcast']
-
-    fieldsets = (
-        ('Основная информация', {
-            'fields': ('name', 'status', 'template_id')
-        }),
-        ('Настройки доставки', {
-            'fields': ('send_telegram', 'send_email')
-        }),
-        ('Фильтры получателей', {
-            'fields': ('filters', 'get_filter_summary'),
-            'classes': ('wide',)
-        }),
-        ('Статистика', {
-            'fields': ('total_recipients', 'sent_count', 'failed_count'),
-        }),
-        ('Временные метки', {
-            'fields': ('scheduled_at', 'started_at', 'completed_at', 'created_at', 'updated_at'),
-            'classes': ('collapse',)
-        }),
-        ('Система', {
-            'fields': ('created_by',),
-            'classes': ('collapse',)
-        }),
-    )
-
-    def get_status_badge(self, obj):
-        status_colors = {
-            'draft': '#999',
-            'scheduled': '#FF9800',
-            'in_progress': '#2196F3',
-            'completed': '#4CAF50',
-            'failed': '#F44336',
-        }
-        color = status_colors.get(obj.status, '#999')
-        return format_html(
-            '<span style="background-color: {}; color: white; padding: 3px 8px; border-radius: 3px; font-weight: bold;">'
-            '{}</span>',
-            color,
-            obj.get_status_display()
-        )
-    get_status_badge.short_description = 'Статус'
-
-    def get_progress_bar(self, obj):
-        if obj.total_recipients == 0:
-            return "Без получателей"
-        progress = obj.get_progress_percent()
-        return format_html(
-            '<div style="width: 200px; height: 20px; background-color: #eee; border-radius: 3px; overflow: hidden;">'
-            '<div style="width: {}%; height: 100%; background-color: #4CAF50; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px;">'
-            '{}%</div></div>',
-            progress,
-            progress
-        )
-    get_progress_bar.short_description = 'Прогресс'
-
-    def get_recipient_count(self, obj):
-        return format_html(
-            '<strong>{}</strong> / {} ({} ошибок)',
-            obj.sent_count,
-            obj.total_recipients,
-            obj.failed_count
-        )
-    get_recipient_count.short_description = 'Отправлено'
-
-    def get_filter_summary(self, obj):
-        from django.utils.html import escape
-        if not obj.filters:
-            return "Фильтры не установлены"
-        html = "<ul>"
-        for key, value in obj.filters.items():
-            if isinstance(value, list):
-                value = ", ".join(str(v) for v in value)
-            html += "<li><strong>{}:</strong> {}</li>".format(escape(str(key)), escape(str(value)))
-        html += "</ul>"
-        return format_html(html)
-    get_filter_summary.short_description = 'Применяемые фильтры'
-
-    def execute_broadcast(self, request, queryset):
-        selected = queryset.filter(status='draft')
-        updated = selected.update(status='in_progress')
-        self.message_user(request, f'✅ Запущено {updated} рассылок.')
-    execute_broadcast.short_description = '▶️ Запустить выбранные рассылки'
-
-    def reset_broadcast(self, request, queryset):
-        updated = queryset.update(status='draft', sent_count=0, failed_count=0)
-        self.message_user(request, f'🔄 Сброшено {updated} рассылок.')
-    reset_broadcast.short_description = '🔄 Сбросить на черновик'
-
-class BroadcastRecipientAdmin(admin.ModelAdmin):
-
-    list_display = (
-        'user_id',
-        'email_address',
-        'get_telegram_status',
-        'get_email_status',
-        'created_at'
-    )
-    list_filter = ('telegram_status', 'email_status', 'created_at', 'broadcast_id')
-    search_fields = ('user_id', 'email_address', 'telegram_id')
-    readonly_fields = (
-        'broadcast_id', 'user_id', 'telegram_id', 'email_address',
-        'telegram_status', 'telegram_sent_at', 'telegram_error',
-        'email_status', 'email_sent_at', 'email_error',
-        'rendered_subject', 'rendered_body', 'created_at', 'updated_at'
-    )
-    can_delete = False
-
-    fieldsets = (
-        ('Получатель', {
-            'fields': ('broadcast_id', 'user_id', 'telegram_id', 'email_address')
-        }),
-        ('Доставка в Telegram', {
-            'fields': ('telegram_status', 'telegram_sent_at', 'telegram_error', 'telegram_message_id'),
-        }),
-        ('Доставка по Email', {
-            'fields': ('email_status', 'email_sent_at', 'email_error'),
-        }),
-        ('Отрендеренное содержание', {
-            'fields': ('rendered_subject', 'rendered_body'),
-            'classes': ('collapse',)
-        }),
-        ('Система', {
-            'fields': ('created_at', 'updated_at'),
-            'classes': ('collapse',)
-        }),
-    )
-
-    @staticmethod
-    def _render_delivery_status(status_value, display_label):
-        icon = DELIVERY_STATUS_ICONS.get(status_value, '?')
-        color = DELIVERY_STATUS_COLORS.get(status_value, '#999')
-        return format_html(
-            '<span style="color: {}; font-weight: bold;">{} {}</span>',
-            color, icon, display_label
-        )
-
-    def get_telegram_status(self, obj):
-        label = obj.get_telegram_status_display() if hasattr(obj, 'get_telegram_status_display') else obj.telegram_status
-        return self._render_delivery_status(obj.telegram_status, label)
-    get_telegram_status.short_description = 'Telegram'
-
-    def get_email_status(self, obj):
-        label = obj.get_email_status_display() if hasattr(obj, 'get_email_status_display') else obj.email_status
-        return self._render_delivery_status(obj.email_status, label)
-    get_email_status.short_description = 'Email'
-
 admin.site.site_header = "USN Telegram Bot - Администрирование"
 admin.site.site_title = "Админка бота"
 admin.site.index_title = "Добро пожаловать в панель администрирования"
 
-admin.site.register(MessageTemplate, MessageTemplateAdmin)
-admin.site.register(Broadcast, BroadcastAdmin)
-admin.site.register(BroadcastRecipient, BroadcastRecipientAdmin)
+from django.contrib.auth.models import User as AuthUser, Group
+admin.site.unregister(AuthUser)
+admin.site.unregister(Group)

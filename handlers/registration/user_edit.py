@@ -83,10 +83,11 @@ async def edit_field_input(message: Message, state: FSMContext) -> None:
         await message.answer(
             BotMessages.REGISTRATION_ERROR,
             reply_markup=InlineKeyboards.back_keyboard(),
+            parse_mode="HTML",
         )
         return
 
-    await message.answer(BotMessages.EDIT_SUCCESS)
+    await message.answer(BotMessages.EDIT_SUCCESS, parse_mode="HTML")
 
     await state.set_state(RegistrationStates.waiting_for_edit_confirmation)
     await message.answer(
@@ -142,5 +143,6 @@ async def finish_editing(query: CallbackQuery, state: FSMContext) -> None:
     await query.message.edit_text(
         user_data_text,
         reply_markup=InlineKeyboards.yes_no_keyboard(),
+        parse_mode="HTML",
     )
     await query.answer()

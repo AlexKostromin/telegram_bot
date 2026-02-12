@@ -59,8 +59,8 @@ class DatabaseConfig(BaseModel):
         default="postgresql+asyncpg://usn_bot:secure_password@postgres:5432/usn_bot_db",
         description="Database connection URL"
     )
-    pool_size: int = Field(default=10, ge=1, le=100, description="Connection pool size")
-    max_overflow: int = Field(default=20, ge=0, le=200, description="Max overflow connections")
+    pool_size: int = Field(default=5, ge=1, le=100, description="Connection pool size")
+    max_overflow: int = Field(default=5, ge=0, le=200, description="Max overflow connections")
 
     @field_validator("database_url", mode="before")
     @classmethod

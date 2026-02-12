@@ -76,7 +76,7 @@ class BotMessages:
 
     REQUEST_FIRST_NAME = "<b>📝 Введите ваше имя:</b>"
     REQUEST_LAST_NAME = "<b>📝 Введите вашу фамилию:</b>"
-    REQUEST_PHONE = "<b>📱 Укажите ваш телефон:</b>"
+    REQUEST_PHONE = "<b>📱 Укажите ваш телефон (в формате +7...):</b>"
     REQUEST_EMAIL = "<b>📧 Укажите ваш email:</b>"
     REQUEST_COUNTRY = "<b>🌍 Расскажите в какой стране вы живете:</b>"
     REQUEST_CITY = "<b>🏙️ Уточните город вашего проживания:</b>"

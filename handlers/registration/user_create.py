@@ -102,12 +102,23 @@ async def get_email(message: Message, state: FSMContext) -> None:
         return
 
     await state.update_data(email=value)
-    await state.set_state(RegistrationStates.waiting_for_country)
-    await message.answer(
-        BotMessages.REQUEST_COUNTRY,
-        reply_markup=InlineKeyboards.back_keyboard(),
-        parse_mode="HTML",
-    )
+    state_data: Dict[str, Any] = await state.get_data()
+    selected_role: Optional[str] = state_data.get("selected_role")
+
+    if selected_role in ("player", "voter"):
+        await state.set_state(RegistrationStates.waiting_for_country)
+        await message.answer(
+            BotMessages.REQUEST_COUNTRY,
+            reply_markup=InlineKeyboards.back_keyboard(),
+            parse_mode="HTML",
+        )
+    else:
+        await state.set_state(RegistrationStates.waiting_for_city)
+        await message.answer(
+            BotMessages.REQUEST_CITY,
+            reply_markup=InlineKeyboards.back_keyboard(),
+            parse_mode="HTML",
+        )
 
 @user_create_router.message(StateFilter(RegistrationStates.waiting_for_country))
 async def get_country(message: Message, state: FSMContext) -> None:
@@ -186,6 +197,7 @@ async def get_certificate_name(message: Message, state: FSMContext) -> None:
         await message.answer(
             BotMessages.REQUEST_PRESENTATION,
             reply_markup=InlineKeyboards.back_keyboard(),
+            parse_mode="HTML",
         )
     else:
 
@@ -193,6 +205,7 @@ async def get_certificate_name(message: Message, state: FSMContext) -> None:
         await message.answer(
             BotMessages.REQUEST_COMPANY,
             reply_markup=InlineKeyboards.back_keyboard(),
+            parse_mode="HTML",
         )
 
 @user_create_router.message(StateFilter(RegistrationStates.waiting_for_company))
@@ -211,6 +224,7 @@ async def get_company(message: Message, state: FSMContext) -> None:
     await message.answer(
         BotMessages.REQUEST_POSITION,
         reply_markup=InlineKeyboards.back_keyboard(),
+        parse_mode="HTML",
     )
 
 @user_create_router.message(StateFilter(RegistrationStates.waiting_for_position))
@@ -230,6 +244,7 @@ async def get_position(message: Message, state: FSMContext) -> None:
     await message.answer(
         BotMessages.REQUEST_PLAYER_VOTER,
         reply_markup=InlineKeyboards.yes_no_keyboard(),
+        parse_mode="HTML",
     )
 
 @user_create_router.callback_query(F.data == "yes", RegistrationStates.waiting_for_role_confirmation_first)
@@ -239,6 +254,7 @@ async def role_confirmation_first_yes(query: CallbackQuery, state: FSMContext) -
     await query.message.edit_text(
         BotMessages.REQUEST_CERTIFICATE_NAME,
         reply_markup=InlineKeyboards.back_keyboard(),
+        parse_mode="HTML",
     )
     await query.answer()
 
@@ -249,6 +265,7 @@ async def role_confirmation_first_no(query: CallbackQuery, state: FSMContext) ->
     await query.message.edit_text(
         BotMessages.REQUEST_COMPANY,
         reply_markup=InlineKeyboards.back_keyboard(),
+        parse_mode="HTML",
     )
     await query.answer()
 
@@ -262,6 +279,7 @@ async def role_confirmation_repeat_yes(query: CallbackQuery, state: FSMContext) 
         await query.message.edit_text(
             BotMessages.REQUEST_PRESENTATION,
             reply_markup=InlineKeyboards.back_keyboard(),
+            parse_mode="HTML",
         )
     else:
         await state.set_state(RegistrationStates.waiting_for_certificate_name)
@@ -349,7 +367,7 @@ async def _create_user_from_state_data(telegram_user: Any, state_data: Dict[str,
         last_name=state_data.get("last_name", ""),
         phone=state_data.get("phone", ""),
         email=state_data.get("email", ""),
-        country=state_data.get("country", ""),
+        country=state_data.get("country"),
         city=state_data.get("city", ""),
         club=state_data.get("club", ""),
         bio=state_data.get("bio"),

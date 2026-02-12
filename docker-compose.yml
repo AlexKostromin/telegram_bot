@@ -113,6 +113,14 @@ services:
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-django-insecure-dev-key}
       - DEBUG=${DEBUG:-True}
       - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
+      - BOT_TOKEN=${BOT_TOKEN}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USERNAME=${SMTP_USERNAME:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - SMTP_USE_TLS=${SMTP_USE_TLS:-True}
+      - SUPPORT_EMAIL=${SUPPORT_EMAIL:-}
+      - EMAIL_FROM_NAME=${EMAIL_FROM_NAME:-USN Competitions}
       - PYTHONUNBUFFERED=1
 
     volumes:
