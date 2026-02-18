@@ -1,3 +1,7 @@
+# Mock API (local development only)
+mock_api/
+Dockerfile.mock
+
 # Markdown Documentation Files (Keep essential docs, ignore outdated ones)
 # Keep: README.md
 # Ignore: Outdated implementation guides, quick starts, plans, status files, client templates
